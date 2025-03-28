@@ -33,3 +33,9 @@ sendBtn.addEventListener('click', async () => {
   chatbox.innerHTML += `<div class="text-left mb-2 text-gray-800">GPT: ${reply}</div>`;
   chatbox.scrollTop = chatbox.scrollHeight;
 });
+
+userInput.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') {
+        sendBtn.click(); // 버튼 클릭 기능 재사용
+    }
+})
