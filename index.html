@@ -12,8 +12,14 @@
     <h1 class="text-xl font-bold mb-4">GPT 간단 챗봇</h1>
     <div id="chatbox" class="h-64 overflow-auto bg-gray-50 p-2 rounded mb-2"></div>
     <input type="text" id="userInput" placeholder="질문을 입력하세요..." class="border p-2 w-full rounded mb-2">
-    <button id="sendBtn" class="bg-blue-500 text-white rounded p-2 w-full">질문하기</button>
-    <a href="/page1.html">링크크</a>
+    <button id="sendBtn" class="bg-blue-500 text-white rounded p-2 w-full mb-2">질문하기</button>
+    <button id="startBtn" class="bg-green-500 text-white rounded p-2 w-full">시작하기</button>
   </div>
+
+  <script>
+    document.getElementById('startBtn').addEventListener('click', () => {
+      window.location.href = '/page1.html';
+    });
+  </script>
 </body>
 </html>

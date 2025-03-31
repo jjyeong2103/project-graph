@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>그래프 해석</title>
+  <script type="module" src="/page2.js"></script>
+  <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+</head>
+<body class="bg-gray-100 p-6">
+  <div class="max-w-4xl mx-auto bg-white p-6 rounded-lg shadow">
+    <h1 class="text-2xl font-bold mb-4">그래프 해석</h1>
+
+    <!-- 그래프 영역 -->
+    <div id="graphContainer" class="relative border bg-gray-50 h-96 mb-4">
+      <div id="tooltip" class="absolute ..."></div>
+      <canvas id="graphCanvas" width="800" height="400" class="w-full h-full"></canvas>
+
+    </div>
+    <!-- 해석 입력 -->
+    <textarea id="interpretation" rows="5" class="w-full border rounded p-2 mb-4" placeholder="이 그래프에 대한 해석을 작성해 보세요..."></textarea>
+
+    <!-- 버튼 -->
+    <button id="feedbackBtn" class="bg-blue-500 text-white px-4 py-2 rounded">피드백 받기</button>
+
+    <!-- 피드백 출력 -->
+    <div id="feedback" class="mt-4 p-4 bg-gray-100 border rounded hidden"></div>
+  </div>
+</body>
+</html>

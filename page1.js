@@ -1,184 +1,270 @@
-document.getElementById('csvFileInput').addEventListener('change', function(event) {
-    const file = event.target.files[0];
-    if (!file) return;
-  
-    const reader = new FileReader();
-    reader.onload = function(e) {
-      const text = e.target.result;
-      const rows = text.trim().split('\n').map(row => row.split(','));
-      renderTable(rows);
-    };
-    reader.readAsText(file);
-  });
-  
-  function renderTable(data) {
-    uploadedData = data; // 전역 변수에 저장
+import Swal from 'sweetalert2';
 
-    const tableBody = document.getElementById('csvTableBody');
-    tableBody.innerHTML = ''; // 초기화
-  
-    const maxRows = 50;
-    for (let i = 0; i < data.length && i < maxRows; i++) {
-      const row = document.createElement('tr');
-      row.className = i % 2 === 0 ? 'bg-white' : 'bg-gray-50';
-  
-      data[i].forEach(cell => {
-        const td = document.createElement('td');
-        td.className = 'px-2 py-1';
-        td.textContent = cell.trim();
-        row.appendChild(td);
-      });
-  
-      tableBody.appendChild(row);
-    }
-  }
-
+document.addEventListener('DOMContentLoaded', () => {
   let points = [];
+  let maxPoints = Infinity;
   let axisMax = { x: 10, y: 10 };
   let uploadedData = [];
-  
+  let xAxisLabel = 'x';
+  let yAxisLabel = 'y';
+
   const canvas = document.getElementById('graphCanvas');
   const ctx = canvas.getContext('2d');
   const padding = 60;
-  
-  // 고해상도 대응
+
   function setupCanvas() {
     const dpr = window.devicePixelRatio || 1;
-    canvas.width = canvas.clientWidth * dpr;
-    canvas.height = canvas.clientHeight * dpr;
+  
+    const width = canvas.clientWidth;
+    const height = canvas.clientHeight;
+  
+    // 최소 높이 설정
+    const minHeight = 300;
+    const adjustedHeight = Math.max(height, minHeight);
+  
+    canvas.width = width * dpr;
+    canvas.height = adjustedHeight * dpr;
+  
     ctx.setTransform(1, 0, 0, 1, 0, 0);
     ctx.scale(dpr, dpr);
   }
-  
+
+  window.addEventListener('resize', () => {
+    setupCanvas();
+    drawGrid();
+  });
+
   document.getElementById('csvFileInput').addEventListener('change', function (event) {
     const file = event.target.files[0];
     if (!file) return;
-  
+
     const reader = new FileReader();
     reader.onload = function (e) {
       const text = e.target.result;
       const rows = text.trim().split('\n').map(row => row.split(','));
       uploadedData = rows;
       renderTable(rows);
-  
-      // x/y 최대값 계산
-      const numericRows = rows.slice(1).map(row => row.map(Number));
-      const xValues = numericRows.map(row => row[0]);
-      const yValues = numericRows.map(row => row[1]);
-      const maxX = Math.max(...xValues);
+
+      const header = rows[0];
+      xAxisLabel = header[0] || 'x';
+      yAxisLabel = header[1] || 'y';
+
+      const numericData = rows
+      .slice(1)
+      .filter(row => row[0].trim() !== '' && row[1].trim() !== '')
+      .map(row => row.map(Number));
+
+      const xValues = numericData.map(row => row[0]);
+      const yValues = numericData.map(row => row[1]);
+
       const maxY = Math.max(...yValues);
       axisMax = {
-        x: Math.ceil(maxX * 1.1),
+        x: xValues.length,
         y: Math.ceil(maxY * 1.1),
       };
-  
+
+      maxPoints = numericData.length;
+
       setupCanvas();
       drawGrid();
     };
     reader.readAsText(file);
   });
-  
-  
-  function drawGrid() {
-    const usableWidth = canvas.width / window.devicePixelRatio - padding * 2;
-    const usableHeight = canvas.height / window.devicePixelRatio - padding * 2;
-  
-    const xUnit = usableWidth / axisMax.x;
-    const yUnit = usableHeight / axisMax.y;
-  
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
-  
-    ctx.save();
-    ctx.translate(padding, canvas.height / window.devicePixelRatio - padding);
-    ctx.scale(1, -1);
-  
-    // grid lines
-    ctx.strokeStyle = '#eee';
-    for (let x = 0; x <= axisMax.x; x++) {
-      ctx.beginPath();
-      ctx.moveTo(x * xUnit, 0);
-      ctx.lineTo(x * xUnit, usableHeight);
-      ctx.stroke();
+
+  function renderTable(data) {
+    const tableBody = document.getElementById('csvTableBody');
+    tableBody.innerHTML = '';
+
+    for (let i = 0; i < data.length && i < 50; i++) {
+      const row = document.createElement('tr');
+      row.className = i % 2 === 0 ? 'bg-white' : 'bg-gray-50';
+
+      data[i].forEach(cell => {
+        const td = document.createElement('td');
+        td.className = 'px-2 py-1';
+        td.textContent = cell.trim();
+        row.appendChild(td);
+      });
+
+      tableBody.appendChild(row);
     }
-    for (let y = 0; y <= axisMax.y; y++) {
+  }
+
+  function drawArrow(fromX, fromY, toX, toY) {
+    const headLength = 8;
+    const angle = Math.atan2(toY - fromY, toX - fromX);
+    ctx.beginPath();
+    ctx.moveTo(fromX, fromY);
+    ctx.lineTo(toX, toY);
+    ctx.lineTo(toX - headLength * Math.cos(angle - Math.PI / 6), toY - headLength * Math.sin(angle - Math.PI / 6));
+    ctx.moveTo(toX, toY);
+    ctx.lineTo(toX - headLength * Math.cos(angle + Math.PI / 6), toY - headLength * Math.sin(angle + Math.PI / 6));
+    ctx.stroke();
+  }
+
+  function drawGrid() {
+    const width = canvas.width / window.devicePixelRatio;
+    const height = canvas.height / window.devicePixelRatio;
+    const usableWidth = width - padding * 2;
+    const usableHeight = height - padding * 2;
+
+    const numericData = uploadedData.slice(1).map(row => row.map(Number));
+    const xValues = numericData.map(row => row[0]);
+    const yValues = numericData.map(row => row[1]);
+    const uniqueX = [...new Set(xValues)].sort((a, b) => a - b);
+
+    const xStep = usableWidth / (uniqueX.length - 1);
+    const yUnit = usableHeight / axisMax.y;
+
+    ctx.clearRect(0, 0, width, height);
+
+    const tickStepY = Math.ceil(axisMax.y / 10);
+
+    ctx.save();
+    ctx.translate(padding, height - padding);
+    ctx.scale(1, -1);
+
+    ctx.strokeStyle = '#eee';
+    ctx.lineWidth = 1;
+    uniqueX.forEach((_, i) => {
+      const xPos = i * xStep;
+      ctx.beginPath();
+      ctx.moveTo(xPos, 0);
+      ctx.lineTo(xPos, usableHeight);
+      ctx.stroke();
+    });
+
+    for (let y = 0; y <= axisMax.y; y += tickStepY) {
       ctx.beginPath();
       ctx.moveTo(0, y * yUnit);
       ctx.lineTo(usableWidth, y * yUnit);
       ctx.stroke();
     }
-  
-    // axes
+
     ctx.strokeStyle = '#000';
     ctx.lineWidth = 1.5;
-    ctx.beginPath();
-    ctx.moveTo(0, 0);
-    ctx.lineTo(usableWidth + 10, 0);
-    ctx.stroke();
-  
-    ctx.beginPath();
-    ctx.moveTo(0, 0);
-    ctx.lineTo(0, usableHeight + 10);
-    ctx.stroke();
-  
-    // arrowheads
-    ctx.fillStyle = '#000';
-    ctx.beginPath();
-    ctx.moveTo(usableWidth + 10, -4);
-    ctx.lineTo(usableWidth + 18, 0);
-    ctx.lineTo(usableWidth + 10, 4);
-    ctx.fill();
-  
-    ctx.beginPath();
-    ctx.moveTo(-4, usableHeight + 10);
-    ctx.lineTo(0, usableHeight + 18);
-    ctx.lineTo(4, usableHeight + 10);
-    ctx.fill();
-  
-    // 숫자 라벨
-    ctx.scale(1, -1);
-    ctx.font = '10px sans-serif';
-    ctx.fillStyle = '#444';
-    for (let x = 1; x <= axisMax.x; x++) {
-      ctx.fillText(x, x * xUnit - 4, 12);
-    }
-    for (let y = 1; y <= axisMax.y; y++) {
-      ctx.fillText(y, -20, -y * yUnit + 4);
-    }
-  
-    ctx.scale(1, -1);
-    // 점 찍기
+    drawArrow(0, 0, usableWidth + 10, 0);
+    drawArrow(0, 0, 0, usableHeight + 10);
+
     ctx.fillStyle = 'red';
     points.forEach(p => {
+      const xIndex = uniqueX.indexOf(p.x);
+      if (xIndex === -1) return;
+      const x = xIndex * xStep;
+      const y = p.y * yUnit;
       ctx.beginPath();
-      ctx.arc(p.x * xUnit, p.y * yUnit, 5, 0, Math.PI * 2);
+      ctx.arc(x, y, 5, 0, Math.PI * 2);
       ctx.fill();
     });
-  
+
+    ctx.restore();
+
+    ctx.font = '12px sans-serif';
+    ctx.fillStyle = '#333';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'top';
+    uniqueX.forEach((xVal, i) => {
+      const xPos = padding + i * xStep;
+      ctx.save();
+      ctx.translate(xPos, height - padding + 20);
+      ctx.rotate(-Math.PI / 2);
+      ctx.fillText(xVal.toString(), 0, 0);
+      ctx.restore();
+    });
+
+    ctx.textAlign = 'right';
+    ctx.textBaseline = 'middle';
+    for (let y = 0; y <= axisMax.y; y += tickStepY) {
+      ctx.fillText(y, padding - 10, height - padding - y * yUnit);
+    }
+
+    ctx.textAlign = 'center';
+    ctx.fillText(xAxisLabel, padding + usableWidth / 2, height - padding + 50);
+    ctx.save();
+    ctx.translate(padding - 50, height - padding - usableHeight / 2);
+    ctx.rotate(-Math.PI / 2);
+    ctx.fillText(yAxisLabel, 0, 0);
     ctx.restore();
   }
-  
+
   function getCanvasCoords(evt) {
     const rect = canvas.getBoundingClientRect();
-    const x = evt.clientX - rect.left - padding;
-    const y = canvas.height / window.devicePixelRatio - (evt.clientY - rect.top) - padding;
-  
-    const unitX = (canvas.width / window.devicePixelRatio - padding * 2) / axisMax.x;
-    const unitY = (canvas.height / window.devicePixelRatio - padding * 2) / axisMax.y;
-  
-    return {
-      x: Math.round(x / unitX),
-      y: Math.round(y / unitY)
-    };
+    const dpr = window.devicePixelRatio || 1;
+    const width = canvas.width / dpr;
+    const height = canvas.height / dpr;
+    const usableWidth = width - padding * 2;
+    const usableHeight = height - padding * 2;
+
+    const numericData = uploadedData.slice(1).map(row => row.map(Number));
+    const xValues = numericData.map(row => row[0]);
+    const uniqueX = [...new Set(xValues)].sort((a, b) => a - b);
+    const xStep = usableWidth / (uniqueX.length - 1);
+    const yUnit = usableHeight / axisMax.y;
+
+    const offsetX = evt.clientX - rect.left;
+    const offsetY = evt.clientY - rect.top;
+
+    const graphX = offsetX - padding;
+    const graphY = height - offsetY - padding;
+
+    const xIndex = Math.round(graphX / xStep);
+    const x = uniqueX[xIndex];
+    const y = graphY / yUnit;
+
+    return { x, y };
   }
-  
+
+  function snapToNearestCSV(point) {
+    if (!uploadedData || uploadedData.length < 2) return point;
+    const dataPoints = uploadedData.slice(1).map(row => ({ x: Number(row[0]), y: Number(row[1]) }));
+    let nearest = null;
+    let minDist = Infinity;
+    dataPoints.forEach(p => {
+      const dx = Math.abs(p.x - point.x);
+      const dy = Math.abs(p.y - point.y);
+      const dist = dx + dy;
+      if (dist < minDist) {
+        minDist = dist;
+        nearest = p;
+      }
+    });
+    return minDist <= 1.5 ? nearest : point;
+  }
+
   canvas.addEventListener('click', (e) => {
-    const point = getCanvasCoords(e);
-    const exists = points.findIndex(p => p.x === point.x && p.y === point.y);
+    const point = snapToNearestCSV(getCanvasCoords(e));
+
+    const exists = points.findIndex(p => {
+      const dx = p.x - point.x;
+      const dy = p.y - point.y;
+      return Math.hypot(dx, dy) < 0.1;  // 좌표가 거의 같은 경우
+    });
     if (exists >= 0) {
       points.splice(exists, 1);
-    } else {
-      points.push(point);
+      drawGrid();
+      return;
     }
+
+    // 가까운 점이 있으면 추가하지 않음
+    const tooClose = points.some(p => {
+      const dx = p.x - point.x;
+      const dy = p.y - point.y;
+      return Math.hypot(dx, dy) < 3; // 3 단위보다 가까우면 무시
+    });
+    if (tooClose) return;
+
+    if (points.length >= maxPoints) {
+      Swal.fire({
+        icon: "error",
+        title: "이미 점을 모두 찍었어요",
+        text: "점을 지우고 다시 찍거나, 피드백을 받아보세요.",
+        confirmButtonText: "확인"
+      });
+      return;
+    }
+
+    points.push(point);
     drawGrid();
   });
-  
+});
+
