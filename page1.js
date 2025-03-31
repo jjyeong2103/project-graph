@@ -1,30 +1,27 @@
 import Swal from 'sweetalert2';
 
+let uploadedData = []; 
+let xAxisLabel = 'x';
+let yAxisLabel = 'y';
+
+
 document.addEventListener('DOMContentLoaded', () => {
   let points = [];
   let maxPoints = Infinity;
   let axisMax = { x: 10, y: 10 };
-  let uploadedData = [];
-  let xAxisLabel = 'x';
-  let yAxisLabel = 'y';
-
+  
   const canvas = document.getElementById('graphCanvas');
   const ctx = canvas.getContext('2d');
   const padding = 60;
 
   function setupCanvas() {
     const dpr = window.devicePixelRatio || 1;
-  
     const width = canvas.clientWidth;
     const height = canvas.clientHeight;
-  
-    // 최소 높이 설정
     const minHeight = 300;
     const adjustedHeight = Math.max(height, minHeight);
-  
     canvas.width = width * dpr;
     canvas.height = adjustedHeight * dpr;
-  
     ctx.setTransform(1, 0, 0, 1, 0, 0);
     ctx.scale(dpr, dpr);
   }
@@ -50,9 +47,9 @@ document.addEventListener('DOMContentLoaded', () => {
       yAxisLabel = header[1] || 'y';
 
       const numericData = rows
-      .slice(1)
-      .filter(row => row[0].trim() !== '' && row[1].trim() !== '')
-      .map(row => row.map(Number));
+        .slice(1)
+        .filter(row => row[0].trim() !== '' && row[1].trim() !== '')
+        .map(row => row.map(Number));
 
       const xValues = numericData.map(row => row[0]);
       const yValues = numericData.map(row => row[1]);
@@ -74,18 +71,15 @@ document.addEventListener('DOMContentLoaded', () => {
   function renderTable(data) {
     const tableBody = document.getElementById('csvTableBody');
     tableBody.innerHTML = '';
-
     for (let i = 0; i < data.length && i < 50; i++) {
       const row = document.createElement('tr');
       row.className = i % 2 === 0 ? 'bg-white' : 'bg-gray-50';
-
       data[i].forEach(cell => {
         const td = document.createElement('td');
         td.className = 'px-2 py-1';
         td.textContent = cell.trim();
         row.appendChild(td);
       });
-
       tableBody.appendChild(row);
     }
   }
@@ -113,21 +107,20 @@ document.addEventListener('DOMContentLoaded', () => {
     const yValues = numericData.map(row => row[1]);
     const uniqueX = [...new Set(xValues)].sort((a, b) => a - b);
 
-    const xStep = usableWidth / (uniqueX.length - 1);
+    const xStep = usableWidth / (uniqueX.length + 1);
     const yUnit = usableHeight / axisMax.y;
 
     ctx.clearRect(0, 0, width, height);
-
     const tickStepY = Math.ceil(axisMax.y / 10);
 
     ctx.save();
-    ctx.translate(padding, height - padding);
+    ctx.translate(padding +5, height - padding);
     ctx.scale(1, -1);
 
     ctx.strokeStyle = '#eee';
     ctx.lineWidth = 1;
     uniqueX.forEach((_, i) => {
-      const xPos = i * xStep;
+      const xPos = (i + 1) * xStep;
       ctx.beginPath();
       ctx.moveTo(xPos, 0);
       ctx.lineTo(xPos, usableHeight);
@@ -150,7 +143,7 @@ document.addEventListener('DOMContentLoaded', () => {
     points.forEach(p => {
       const xIndex = uniqueX.indexOf(p.x);
       if (xIndex === -1) return;
-      const x = xIndex * xStep;
+      const x = (xIndex + 1) * xStep;
       const y = p.y * yUnit;
       ctx.beginPath();
       ctx.arc(x, y, 5, 0, Math.PI * 2);
@@ -164,7 +157,7 @@ document.addEventListener('DOMContentLoaded', () => {
     ctx.textAlign = 'center';
     ctx.textBaseline = 'top';
     uniqueX.forEach((xVal, i) => {
-      const xPos = padding + i * xStep;
+      const xPos = padding + (i + 1) * xStep;
       ctx.save();
       ctx.translate(xPos, height - padding + 20);
       ctx.rotate(-Math.PI / 2);
@@ -198,7 +191,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const numericData = uploadedData.slice(1).map(row => row.map(Number));
     const xValues = numericData.map(row => row[0]);
     const uniqueX = [...new Set(xValues)].sort((a, b) => a - b);
-    const xStep = usableWidth / (uniqueX.length - 1);
+    const xStep = usableWidth / (uniqueX.length + 1);
     const yUnit = usableHeight / axisMax.y;
 
     const offsetX = evt.clientX - rect.left;
@@ -207,7 +200,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const graphX = offsetX - padding;
     const graphY = height - offsetY - padding;
 
-    const xIndex = Math.round(graphX / xStep);
+    const xIndex = Math.round(graphX / xStep) - 1;
     const x = uniqueX[xIndex];
     const y = graphY / yUnit;
 
@@ -237,7 +230,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const exists = points.findIndex(p => {
       const dx = p.x - point.x;
       const dy = p.y - point.y;
-      return Math.hypot(dx, dy) < 0.1;  // 좌표가 거의 같은 경우
+      return Math.hypot(dx, dy) < 0.1;
     });
     if (exists >= 0) {
       points.splice(exists, 1);
@@ -245,11 +238,10 @@ document.addEventListener('DOMContentLoaded', () => {
       return;
     }
 
-    // 가까운 점이 있으면 추가하지 않음
     const tooClose = points.some(p => {
       const dx = p.x - point.x;
       const dy = p.y - point.y;
-      return Math.hypot(dx, dy) < 3; // 3 단위보다 가까우면 무시
+      return Math.hypot(dx, dy) < 3;
     });
     if (tooClose) return;
 
@@ -268,3 +260,36 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 });
 
+
+document.getElementById('checkGraphBtn').addEventListener('click', () => {
+  console.log('버튼 클릭됨');
+  const numericData = uploadedData.slice(1).map(row => row.map(Number));
+  const xValues = numericData.map(row => row[0]);
+  const yValues = numericData.map(row => row[1]);
+  const uniqueX = [...new Set(xValues)].sort((a, b) => a - b);
+  const axisMax = {
+    x: uniqueX.length,
+    y: Math.ceil(Math.max(...yValues) * 1.1),
+  };
+
+  const originalPoints = numericData.map(row => ({ x: row[0], y: row[1] }));
+
+  // ✅ 저장
+  localStorage.setItem('graphData', JSON.stringify({
+    points: originalPoints,
+    uniqueX,
+    axisMax,
+    xAxisLabel,
+    yAxisLabel
+  }));
+
+  console.log('저장 완료:', localStorage.getItem('graphData')); // 여기서 null이면 실패
+
+  Swal.fire({
+    icon: 'success',
+    title: '그래프 데이터 저장 완료!',
+    confirmButtonText: '계속하기'
+  }).then(() => {
+    window.location.href = '/page2.html';
+  });
+});
