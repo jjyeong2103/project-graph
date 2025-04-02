@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>1페이지 - 그래프 그리기</title>
+  <title>1단계_그래프 그리기</title>
   <script type="module" src="page1.js"></script>
   <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet" />
 </head>
@@ -12,7 +12,7 @@
     
     <!-- 왼쪽 영역 -->
     <div class="w-1/2 bg-white p-4 shadow rounded flex flex-col">
-      <h2 class="text-lg font-semibold mb-2">CSV 파일 업로드</h2>
+      <h2 class="text-lg font-semibold mb-2">CSV 파일 업로드하기</h2>
       <input type="file" id="csvFileInput" accept=".csv" class="mb-4" />
       <div class="overflow-y-auto max-h-80 border rounded">
         <table class="table-auto w-full text-sm text-left border-collapse">
@@ -31,21 +31,28 @@
 
 <!-- 오른쪽 영역 -->
 <div class="w-1/2 bg-white p-4 shadow rounded flex flex-col overflow-hidden">
-  <h2 class="text-lg font-semibold mb-2">좌표평면에 점 찍기</h2>
+  <h2 class="text-lg font-semibold mb-2">두 변수 x와 y 사이의 관계를 그래프 나타내기</h2>
   <div class="flex-grow">
     <canvas id="graphCanvas" class="w-full h-[1000px] border border-gray-300"></canvas>
 
     <div style="text-align: right; margin-top: 1rem;">
       
-      <button id="checkGraphBtn" class="mt-4 bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded shadow transition">
-        그래프 확인하기
+      <button id="clearPointsBtn" class="bg-red-500 text-white px-4 py-2 rounded">
+        좌표평면 위의 모든 점 삭제
       </button>
+
+
+      <button id="feedbackBtn" class="bg-blue-500 text-white px-4 py-2 rounded">
+        그래프 피드백 받기
+      </button>
+
+
+      <button id="checkGraphBtn" disabled class="bg-gray-400 text-white px-4 py-2 rounded opacity-50 cursor-not-allowed transition">
+        그래프 해석하기
+      </button>
+
+
       
-      <a href="/page2.html">
-        <button id="nextStepBtn" class="mt-4 bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded shadow transition">
-          다음 단계로 가기
-        </button>
-      </a>
     </div>
   </div>
 </div>

@@ -3,10 +3,10 @@ import Swal from 'sweetalert2';
 let uploadedData = []; 
 let xAxisLabel = 'x';
 let yAxisLabel = 'y';
+let points = [];
 
 
 document.addEventListener('DOMContentLoaded', () => {
-  let points = [];
   let maxPoints = Infinity;
   let axisMax = { x: 10, y: 10 };
   
@@ -255,10 +255,55 @@ document.addEventListener('DOMContentLoaded', () => {
       return;
     }
 
+    //좌표평면 위의 모든 점 삭제 
+    document.getElementById('clearPointsBtn').addEventListener('click', () => {
+      points.length = 0;
+      drawGrid();
+   });
+
+
     points.push(point);
     drawGrid();
   });
 });
+
+
+//그래프 피드백 받기
+document.getElementById('feedbackBtn').addEventListener('click', () => {
+  const numericData = uploadedData.slice(1).map(row => ({ x: Number(row[0]), y: Number(row[1]) }));
+
+  let correctCount = 0;
+  points.forEach(p => {
+    if (numericData.some(d => Math.abs(d.x - p.x) < 0.1 && Math.abs(d.y - p.y) < 0.1)) {
+      correctCount++;
+    }
+  });
+
+  const total = numericData.length;
+  const allCorrect = correctCount === total;
+
+  Swal.fire({
+    icon: allCorrect ? 'success' : 'info',
+    title: `총 ${total}개 중 ${correctCount}개 정답이에요`,
+    text: allCorrect ? '모든 점이 정확하게 찍혔어요!' : '다시 확인해보세요.',
+    confirmButtonText: '확인'
+  });
+
+  const nextBtn = document.getElementById('checkGraphBtn');
+
+  if (allCorrect) {
+    nextBtn.disabled = false;
+    nextBtn.classList.remove('bg-gray-400', 'opacity-50', 'cursor-not-allowed');
+    nextBtn.classList.add('bg-green-500', 'hover:bg-green-600', 'cursor-pointer');
+  } else {
+    // 다시 비활성화할 수도 있음 (선택 사항)
+    nextBtn.disabled = true;
+    nextBtn.classList.remove('bg-green-500', 'hover:bg-green-600', 'cursor-pointer');
+    nextBtn.classList.add('bg-gray-400', 'opacity-50', 'cursor-not-allowed');
+  }
+});
+
+
 
 
 document.getElementById('checkGraphBtn').addEventListener('click', () => {
