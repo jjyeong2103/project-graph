@@ -1,15 +1,18 @@
+let hoveredPoint = null;
+const OPENAI_API_KEY = import.meta.env.VITE_OPENAI_API_KEY;
+
 document.addEventListener('DOMContentLoaded', () => {
   const canvas = document.getElementById('graphCanvas');
   const ctx = canvas.getContext('2d');
   const padding = 60;
 
+  // 그래프 데이터 로드
   const stored = JSON.parse(localStorage.getItem('graphData') || '{}');
   const points = stored.points || [];
   const uniqueX = stored.uniqueX || [];
   const axisMax = stored.axisMax || { x: 10, y: 10 };
   const xAxisLabel = stored.xAxisLabel || 'x';
   const yAxisLabel = stored.yAxisLabel || 'y';
-
   if (points.length === 0) return;
 
   const dpr = window.devicePixelRatio || 1;
@@ -20,11 +23,13 @@ document.addEventListener('DOMContentLoaded', () => {
   const xStep = usableWidth / (uniqueX.length - 1);
   const yUnit = usableHeight / axisMax.y;
 
+  // 캔버스 초기화
   canvas.width = width * dpr;
   canvas.height = height * dpr;
   ctx.setTransform(1, 0, 0, 1, 0, 0);
   ctx.scale(dpr, dpr);
 
+  // 화살표 그리기
   function drawArrow(fromX, fromY, toX, toY) {
     const headLength = 8;
     const angle = Math.atan2(toY - fromY, toX - fromX);
@@ -37,13 +42,14 @@ document.addEventListener('DOMContentLoaded', () => {
     ctx.stroke();
   }
 
+  // 좌표평면 및 점 렌더링
   function drawGrid() {
     ctx.clearRect(0, 0, width, height);
     ctx.save();
     ctx.translate(padding, height - padding);
     ctx.scale(1, -1);
 
-    // 배경 격자
+    // 격자
     ctx.strokeStyle = '#eee';
     ctx.lineWidth = 1;
     uniqueX.forEach((_, i) => {
@@ -68,7 +74,7 @@ document.addEventListener('DOMContentLoaded', () => {
     drawArrow(0, 0, usableWidth + 10, 0);
     drawArrow(0, 0, 0, usableHeight + 10);
 
-    // 점 찍기
+    // 점 그리기 및 hover 처리
     ctx.fillStyle = 'blue';
     points.forEach(p => {
       const xIndex = uniqueX.indexOf(p.x);
@@ -78,11 +84,23 @@ document.addEventListener('DOMContentLoaded', () => {
       ctx.beginPath();
       ctx.arc(x, y, 5, 0, Math.PI * 2);
       ctx.fill();
+
+      if (hoveredPoint && hoveredPoint.x === p.x && hoveredPoint.y === p.y) {
+        ctx.fillStyle = 'red';
+        ctx.beginPath();
+        ctx.arc(x, y, 7, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.fillStyle = '#000';
+        ctx.scale(1, -1);
+        ctx.fillText(`y=${p.y}`, x + 10, -y);
+        ctx.scale(1, -1);
+        ctx.fillStyle = 'blue';
+      }
     });
 
     ctx.restore();
 
-    // 축 눈금
+    // 눈금
     ctx.font = '12px sans-serif';
     ctx.fillStyle = '#333';
     ctx.textAlign = 'center';
@@ -114,7 +132,33 @@ document.addEventListener('DOMContentLoaded', () => {
 
   drawGrid();
 
-  // ✨ 피드백 버튼 기능
+  // 마우스 이동 시 hover 포인트 추적
+  canvas.addEventListener('mousemove', (e) => {
+    const rect = canvas.getBoundingClientRect();
+    const scaleX = canvas.width / rect.width;
+    const scaleY = canvas.height / rect.height;
+    const mouseX = (e.clientX - rect.left) * scaleX / dpr;
+    const mouseY = (e.clientY - rect.top) * scaleY / dpr;
+
+    const cx = mouseX - padding;
+    const cy = height - mouseY - padding;
+
+    hoveredPoint = null;
+    for (const p of points) {
+      const xIndex = uniqueX.indexOf(p.x);
+      if (xIndex === -1) continue;
+      const x = xIndex * xStep;
+      const y = p.y * yUnit;
+      const dist = Math.hypot(cx - x, cy - y);
+      if (dist < 10) {
+        hoveredPoint = p;
+        break;
+      }
+    }
+    drawGrid();
+  });
+
+  // ✨ 피드백 요청 기능
   const feedbackBtn = document.getElementById('feedbackBtn');
   const interpretationInput = document.getElementById('interpretation');
   const feedbackDiv = document.getElementById('feedback');
@@ -142,8 +186,7 @@ ${points.map(p => `${p.x},${p.y}`).join('\n')}
 [학생의 해석]
 ${studentText}
 
-친절하고 구체적인 피드백을 줘.
-`;
+친절하고 구체적인 피드백을 줘.`;
 
     feedbackDiv.textContent = '피드백을 가져오는 중...';
     feedbackDiv.classList.remove('hidden');
@@ -152,7 +195,7 @@ ${studentText}
       const response = await fetch('https://api.openai.com/v1/chat/completions', {
         method: 'POST',
         headers: {
-          'Authorization': `Bearer YOUR_API_KEY`, // <-- 반드시 여기에 본인의 OpenAI API 키 입력
+          'Authorization': `Bearer ${OPENAI_API_KEY}`,
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({

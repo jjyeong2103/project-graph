@@ -5,23 +5,22 @@ let xAxisLabel = 'x';
 let yAxisLabel = 'y';
 let points = [];
 
-
+// 페이지 로드 후 초기화
 document.addEventListener('DOMContentLoaded', () => {
   let maxPoints = Infinity;
   let axisMax = { x: 10, y: 10 };
-  
+
   const canvas = document.getElementById('graphCanvas');
   const ctx = canvas.getContext('2d');
   const padding = 60;
 
+  // 캔버스 설정 (DPR 및 리사이징 대응)
   function setupCanvas() {
     const dpr = window.devicePixelRatio || 1;
     const width = canvas.clientWidth;
-    const height = canvas.clientHeight;
-    const minHeight = 300;
-    const adjustedHeight = Math.max(height, minHeight);
+    const height = Math.max(canvas.clientHeight, 300);
     canvas.width = width * dpr;
-    canvas.height = adjustedHeight * dpr;
+    canvas.height = height * dpr;
     ctx.setTransform(1, 0, 0, 1, 0, 0);
     ctx.scale(dpr, dpr);
   }
@@ -31,14 +30,14 @@ document.addEventListener('DOMContentLoaded', () => {
     drawGrid();
   });
 
+  // CSV 파일 업로드 시 처리
   document.getElementById('csvFileInput').addEventListener('change', function (event) {
     const file = event.target.files[0];
     if (!file) return;
 
     const reader = new FileReader();
     reader.onload = function (e) {
-      const text = e.target.result;
-      const rows = text.trim().split('\n').map(row => row.split(','));
+      const rows = e.target.result.trim().split('\n').map(row => row.split(','));
       uploadedData = rows;
       renderTable(rows);
 
@@ -46,19 +45,20 @@ document.addEventListener('DOMContentLoaded', () => {
       xAxisLabel = header[0] || 'x';
       yAxisLabel = header[1] || 'y';
 
-      const numericData = rows
-        .slice(1)
-        .filter(row => row[0].trim() !== '' && row[1].trim() !== '')
+      const numericData = rows.slice(1)
+        .filter(row => row[0].trim() && row[1].trim())
         .map(row => row.map(Number));
 
       const xValues = numericData.map(row => row[0]);
       const yValues = numericData.map(row => row[1]);
 
+      const minY = Math.min(...yValues);
       const maxY = Math.max(...yValues);
-      axisMax = {
-        x: xValues.length,
-        y: Math.ceil(maxY * 1.1),
-      };
+      const yMin = Math.floor(minY - 5);
+      const yMax = Math.ceil(maxY + 5);
+
+      axisMax = { x: xValues.length, y: yMax - yMin };
+      window.yStart = yMin;
 
       maxPoints = numericData.length;
 
@@ -68,6 +68,7 @@ document.addEventListener('DOMContentLoaded', () => {
     reader.readAsText(file);
   });
 
+  // CSV 데이터 테이블 렌더링
   function renderTable(data) {
     const tableBody = document.getElementById('csvTableBody');
     tableBody.innerHTML = '';
@@ -84,6 +85,18 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   }
 
+  // 보기 좋은 y축 눈금 간격 계산
+  function getNiceTickInterval(range) {
+    const rough = range / 8;
+    const pow10 = Math.pow(10, Math.floor(Math.log10(rough)));
+    const fraction = rough / pow10;
+    if (fraction <= 1) return 1 * pow10;
+    if (fraction <= 2) return 2 * pow10;
+    if (fraction <= 5) return 5 * pow10;
+    return 10 * pow10;
+  }
+
+  // 화살표 그리기 함수
   function drawArrow(fromX, fromY, toX, toY) {
     const headLength = 8;
     const angle = Math.atan2(toY - fromY, toX - fromX);
@@ -96,6 +109,7 @@ document.addEventListener('DOMContentLoaded', () => {
     ctx.stroke();
   }
 
+  // 좌표평면 및 점 그리기
   function drawGrid() {
     const width = canvas.width / window.devicePixelRatio;
     const height = canvas.height / window.devicePixelRatio;
@@ -104,26 +118,25 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const numericData = uploadedData.slice(1).map(row => row.map(Number));
     const xValues = numericData.map(row => row[0]);
-    const yValues = numericData.map(row => row[1]);
     const uniqueX = [...new Set(xValues)].sort((a, b) => a - b);
-
     const xStep = usableWidth / (uniqueX.length + 1);
     const yUnit = usableHeight / axisMax.y;
+    const tickStepY = getNiceTickInterval(axisMax.y);
 
     ctx.clearRect(0, 0, width, height);
-    const tickStepY = Math.ceil(axisMax.y / 10);
 
     ctx.save();
-    ctx.translate(padding +5, height - padding);
+    ctx.translate(padding + 5, height - padding);
     ctx.scale(1, -1);
 
+    // 배경 격자
     ctx.strokeStyle = '#eee';
     ctx.lineWidth = 1;
     uniqueX.forEach((_, i) => {
-      const xPos = (i + 1) * xStep;
+      const x = (i + 1) * xStep;
       ctx.beginPath();
-      ctx.moveTo(xPos, 0);
-      ctx.lineTo(xPos, usableHeight);
+      ctx.moveTo(x, 0);
+      ctx.lineTo(x, usableHeight);
       ctx.stroke();
     });
 
@@ -134,6 +147,7 @@ document.addEventListener('DOMContentLoaded', () => {
       ctx.stroke();
     }
 
+    // 축과 점
     ctx.strokeStyle = '#000';
     ctx.lineWidth = 1.5;
     drawArrow(0, 0, usableWidth + 10, 0);
@@ -144,7 +158,7 @@ document.addEventListener('DOMContentLoaded', () => {
       const xIndex = uniqueX.indexOf(p.x);
       if (xIndex === -1) return;
       const x = (xIndex + 1) * xStep;
-      const y = p.y * yUnit;
+      const y = (p.y - window.yStart) * yUnit;
       ctx.beginPath();
       ctx.arc(x, y, 5, 0, Math.PI * 2);
       ctx.fill();
@@ -152,6 +166,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     ctx.restore();
 
+    // 눈금 및 축 라벨
     ctx.font = '12px sans-serif';
     ctx.fillStyle = '#333';
     ctx.textAlign = 'center';
@@ -168,7 +183,9 @@ document.addEventListener('DOMContentLoaded', () => {
     ctx.textAlign = 'right';
     ctx.textBaseline = 'middle';
     for (let y = 0; y <= axisMax.y; y += tickStepY) {
-      ctx.fillText(y, padding - 10, height - padding - y * yUnit);
+      const yLabel = y + window.yStart;
+      const yPos = height - padding - y * yUnit;
+      ctx.fillText(yLabel, padding - 10, yPos);
     }
 
     ctx.textAlign = 'center';
@@ -180,6 +197,7 @@ document.addEventListener('DOMContentLoaded', () => {
     ctx.restore();
   }
 
+  // 캔버스 클릭 좌표 계산
   function getCanvasCoords(evt) {
     const rect = canvas.getBoundingClientRect();
     const dpr = window.devicePixelRatio || 1;
@@ -196,54 +214,43 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const offsetX = evt.clientX - rect.left;
     const offsetY = evt.clientY - rect.top;
-
     const graphX = offsetX - padding;
     const graphY = height - offsetY - padding;
 
     const xIndex = Math.round(graphX / xStep) - 1;
     const x = uniqueX[xIndex];
-    const y = graphY / yUnit;
-
+    const y = graphY / yUnit + window.yStart;
     return { x, y };
   }
 
+  // 가장 가까운 CSV 좌표로 스냅
   function snapToNearestCSV(point) {
-    if (!uploadedData || uploadedData.length < 2) return point;
     const dataPoints = uploadedData.slice(1).map(row => ({ x: Number(row[0]), y: Number(row[1]) }));
     let nearest = null;
     let minDist = Infinity;
     dataPoints.forEach(p => {
-      const dx = Math.abs(p.x - point.x);
-      const dy = Math.abs(p.y - point.y);
-      const dist = dx + dy;
+      const dist = Math.abs(p.x - point.x) + Math.abs(p.y - point.y);
       if (dist < minDist) {
         minDist = dist;
         nearest = p;
       }
     });
-    return minDist <= 1.5 ? nearest : point;
+    return minDist <= 3 ? nearest : point;
   }
 
+  // 캔버스 클릭 시 점 추가/삭제
   canvas.addEventListener('click', (e) => {
     const point = snapToNearestCSV(getCanvasCoords(e));
+    if (!point) return;
 
-    const exists = points.findIndex(p => {
-      const dx = p.x - point.x;
-      const dy = p.y - point.y;
-      return Math.hypot(dx, dy) < 0.1;
-    });
+    const exists = points.findIndex(p => Math.hypot(p.x - point.x, p.y - point.y) < 0.1);
     if (exists >= 0) {
       points.splice(exists, 1);
       drawGrid();
       return;
     }
 
-    const tooClose = points.some(p => {
-      const dx = p.x - point.x;
-      const dy = p.y - point.y;
-      return Math.hypot(dx, dy) < 3;
-    });
-    if (tooClose) return;
+    if (points.some(p => Math.hypot(p.x - point.x, p.y - point.y) < 1)) return;
 
     if (points.length >= maxPoints) {
       Swal.fire({
@@ -255,86 +262,66 @@ document.addEventListener('DOMContentLoaded', () => {
       return;
     }
 
-    //좌표평면 위의 모든 점 삭제 
-    document.getElementById('clearPointsBtn').addEventListener('click', () => {
-      points.length = 0;
-      drawGrid();
-   });
-
-
     points.push(point);
     drawGrid();
   });
-});
 
-
-//그래프 피드백 받기
-document.getElementById('feedbackBtn').addEventListener('click', () => {
-  const numericData = uploadedData.slice(1).map(row => ({ x: Number(row[0]), y: Number(row[1]) }));
-
-  let correctCount = 0;
-  points.forEach(p => {
-    if (numericData.some(d => Math.abs(d.x - p.x) < 0.1 && Math.abs(d.y - p.y) < 0.1)) {
-      correctCount++;
-    }
+  // 점 초기화 버튼
+  document.getElementById('clearPointsBtn').addEventListener('click', () => {
+    points.length = 0;
+    drawGrid();
   });
 
-  const total = numericData.length;
-  const allCorrect = correctCount === total;
+  // 피드백 확인 버튼
+  document.getElementById('feedbackBtn').addEventListener('click', () => {
+    const numericData = uploadedData.slice(1).map(row => ({ x: Number(row[0]), y: Number(row[1]) }));
+    let correctCount = points.filter(p => numericData.some(d => Math.abs(d.x - p.x) < 0.1 && Math.abs(d.y - p.y) < 0.1)).length;
 
-  Swal.fire({
-    icon: allCorrect ? 'success' : 'info',
-    title: `총 ${total}개 중 ${correctCount}개 정답이에요`,
-    text: allCorrect ? '모든 점이 정확하게 찍혔어요!' : '다시 확인해보세요.',
-    confirmButtonText: '확인'
+    const allCorrect = correctCount === numericData.length;
+    Swal.fire({
+      icon: allCorrect ? 'success' : 'info',
+      title: `총 ${numericData.length}개의 점 중 ${correctCount}개가 정확해요.`,
+      text: allCorrect ? '모든 점이 정확하게 찍혔어요!' : '다시 확인해보세요.',
+      confirmButtonText: '확인'
+    });
+
+    const nextBtn = document.getElementById('checkGraphBtn');
+    nextBtn.disabled = !allCorrect;
+    nextBtn.classList.toggle('bg-green-500', allCorrect);
+    nextBtn.classList.toggle('hover:bg-green-600', allCorrect);
+    nextBtn.classList.toggle('cursor-pointer', allCorrect);
+    nextBtn.classList.toggle('bg-gray-400', !allCorrect);
+    nextBtn.classList.toggle('opacity-50', !allCorrect);
+    nextBtn.classList.toggle('cursor-not-allowed', !allCorrect);
   });
 
-  const nextBtn = document.getElementById('checkGraphBtn');
+  // 다음 페이지로 이동 (로컬 저장 포함)
+  document.getElementById('checkGraphBtn').addEventListener('click', () => {
+    const numericData = uploadedData.slice(1).map(row => row.map(Number));
+    const xValues = numericData.map(row => row[0]);
+    const yValues = numericData.map(row => row[1]);
+    const uniqueX = [...new Set(xValues)].sort((a, b) => a - b);
+    const axisMax = {
+      x: uniqueX.length,
+      y: Math.ceil(Math.max(...yValues) * 1.1),
+    };
 
-  if (allCorrect) {
-    nextBtn.disabled = false;
-    nextBtn.classList.remove('bg-gray-400', 'opacity-50', 'cursor-not-allowed');
-    nextBtn.classList.add('bg-green-500', 'hover:bg-green-600', 'cursor-pointer');
-  } else {
-    // 다시 비활성화할 수도 있음 (선택 사항)
-    nextBtn.disabled = true;
-    nextBtn.classList.remove('bg-green-500', 'hover:bg-green-600', 'cursor-pointer');
-    nextBtn.classList.add('bg-gray-400', 'opacity-50', 'cursor-not-allowed');
-  }
-});
+    const originalPoints = numericData.map(row => ({ x: row[0], y: row[1] }));
 
+    localStorage.setItem('graphData', JSON.stringify({
+      points: originalPoints,
+      uniqueX,
+      axisMax,
+      xAxisLabel,
+      yAxisLabel
+    }));
 
-
-
-document.getElementById('checkGraphBtn').addEventListener('click', () => {
-  console.log('버튼 클릭됨');
-  const numericData = uploadedData.slice(1).map(row => row.map(Number));
-  const xValues = numericData.map(row => row[0]);
-  const yValues = numericData.map(row => row[1]);
-  const uniqueX = [...new Set(xValues)].sort((a, b) => a - b);
-  const axisMax = {
-    x: uniqueX.length,
-    y: Math.ceil(Math.max(...yValues) * 1.1),
-  };
-
-  const originalPoints = numericData.map(row => ({ x: row[0], y: row[1] }));
-
-  // ✅ 저장
-  localStorage.setItem('graphData', JSON.stringify({
-    points: originalPoints,
-    uniqueX,
-    axisMax,
-    xAxisLabel,
-    yAxisLabel
-  }));
-
-  console.log('저장 완료:', localStorage.getItem('graphData')); // 여기서 null이면 실패
-
-  Swal.fire({
-    icon: 'success',
-    title: '그래프 데이터 저장 완료!',
-    confirmButtonText: '계속하기'
-  }).then(() => {
-    window.location.href = '/page2.html';
+    Swal.fire({
+      icon: 'success',
+      title: '그래프 그리기 완료!',
+      confirmButtonText: '계속하기'
+    }).then(() => {
+      window.location.href = '/page2.html';
+    });
   });
 });
