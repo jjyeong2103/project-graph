@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>그래프 해석</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        body { font-family: Arial, sans-serif; text-align: center; }
+        canvas { max-width: 600px; margin: 20px auto; }
+        #interpretations { margin-top: 20px; text-align: left; max-width: 600px; margin: auto; }
+    </style>
+</head>
+<body>
+    <h1>그래프 생성 및 해석</h1>
+    <button onclick="generateGraph()">그래프 생성하기</button>
+    <canvas id="graphCanvas"></canvas>
+    <br>
+    <input type="text" id="interpretation" placeholder="그래프 해석을 입력하세요">
+    <button onclick="submitInterpretation()">제출</button>
+    <div id="interpretations"></div>
+
+    <script>
+        let chart;
+
+        function generateGraph() {
+            const ctx = document.getElementById('graphCanvas').getContext('2d');
+            const graphTypes = ['linear', 'exponential', 'sinusoidal'];
+            const selectedType = graphTypes[Math.floor(Math.random() * graphTypes.length)];
+            let data = [];
+
+            for (let i = 0; i < 10; i++) {
+                if (selectedType === 'linear') {
+                    data.push(i * 2);
+                } else if (selectedType === 'exponential') {
+                    data.push(Math.pow(2, i % 5));
+                } else if (selectedType === 'sinusoidal') {
+                    data.push(Math.sin(i) * 10 + 10);
+                }
+            }
+
+            if (chart) chart.destroy();
+
+            chart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: [...Array(10).keys()],
+                    datasets: [{
+                        label: '그래프',
+                        data: data,
+                        borderColor: 'blue',
+                        fill: false
+                    }]
+                }
+            });
+        }
+
+        function submitInterpretation() {
+            const text = document.getElementById('interpretation').value;
+            if (!text) return;
+
+            const interpretationsDiv = document.getElementById('interpretations');
+            const newEntry = document.createElement('p');
+            newEntry.textContent = `학생: ${text}`;
+            interpretationsDiv.appendChild(newEntry);
+
+            document.getElementById('interpretation').value = '';
+        }
+    </script>
+</body>
+</html>
