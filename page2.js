@@ -1,5 +1,4 @@
 let hoveredPoint = null;
-const OPENAI_API_KEY = import.meta.env.VITE_OPENAI_API_KEY;
 
 document.addEventListener('DOMContentLoaded', () => {
   const canvas = document.getElementById('graphCanvas');
@@ -192,11 +191,10 @@ ${studentText}
     feedbackDiv.classList.remove('hidden');
 
     try {
-      const response = await fetch('https://api.openai.com/v1/chat/completions', {
+      const response = await fetch('/.netlify/functions/gptProxy', {
         method: 'POST',
         headers: {
-          'Authorization': `Bearer ${OPENAI_API_KEY}`,
-          'Content-Type': 'application/json',
+          'Content-Type': 'application/json'
         },
         body: JSON.stringify({
           model: 'gpt-4',
