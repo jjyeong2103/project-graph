@@ -95,7 +95,7 @@ document.addEventListener('DOMContentLoaded', () => {
     if (fraction <= 5) return 5 * pow10;
     return 10 * pow10;
   }
-
+  
   // 화살표 그리기 함수
   function drawArrow(fromX, fromY, toX, toY) {
     const headLength = 8;
@@ -128,6 +128,28 @@ document.addEventListener('DOMContentLoaded', () => {
     ctx.save();
     ctx.translate(padding + 5, height - padding);
     ctx.scale(1, -1);
+
+    //물결 추가
+    let yOffset = -120; // 아래로 이동
+    let xOffset = -20;  // 왼쪽으로 이동
+
+    ctx.strokeStyle = "black";
+    ctx.lineWidth = 2;
+
+    // 첫 번째 작고 좁은 물결
+    ctx.beginPath();
+    ctx.moveTo(30 + xOffset, 105 + yOffset);
+    ctx.bezierCurveTo(27 + xOffset, 110 + yOffset, 27 + xOffset, 115 + yOffset, 30 + xOffset, 120 + yOffset);  
+    ctx.bezierCurveTo(33 + xOffset, 125 + yOffset, 33 + xOffset, 130 + yOffset, 30 + xOffset, 135 + yOffset);
+    ctx.stroke();
+
+    // 두 번째 물결 (가까이)
+    ctx.beginPath();
+    ctx.moveTo(40 + xOffset, 105 + yOffset);
+    ctx.bezierCurveTo(37 + xOffset, 110 + yOffset, 37 + xOffset, 115 + yOffset, 40 + xOffset, 120 + yOffset);  
+    ctx.bezierCurveTo(43 + xOffset, 125 + yOffset, 43 + xOffset, 130 + yOffset, 40 + xOffset, 135 + yOffset);
+    ctx.stroke();
+
 
     // 배경 격자
     ctx.strokeStyle = '#eee';
