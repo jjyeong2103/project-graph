@@ -27,7 +27,7 @@ export async function handler(event) {
 
   try {
     const response = await openai.chat.completions.create({
-      model: body.model || 'gpt-3.5-turbo',
+      model: body.model || 'gpt-4-turbo',
       messages: body.messages,
       temperature: body.temperature || 0.6,
     });

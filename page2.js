@@ -197,7 +197,7 @@ ${studentText}
           'Content-Type': 'application/json'
         },
         body: JSON.stringify({
-          model: 'gpt-3.5-turbo',
+          model: 'gpt-4-turbo',
           messages: [
             { role: 'system', content: '너는 수학 교사로서 중학생이 작성한 그래프 해석을 피드백하는 역할이야.' },
             { role: 'user', content: prompt },
