@@ -32,6 +32,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const xStep = usableWidth / (uniqueX.length + 1);
   const yUnit = usableHeight / axisMax.y;
 
+
   // 캔버스 해상도 보정
   canvas.width = width * dpr;
   canvas.height = height * dpr;
@@ -245,4 +246,15 @@ ${studentText}
       feedbackDiv.textContent = '피드백 요청 중 오류가 발생했습니다';
     }
   });
+});
+
+
+//page3과 연결
+document.addEventListener('DOMContentLoaded', () => {
+  const nextButton = document.getElementById('checkGraphBtn');
+  if (nextButton) {
+    nextButton.addEventListener('click', () => {
+      window.location.href = 'page3.html';
+    });
+  }
 });
