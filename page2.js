@@ -247,14 +247,3 @@ ${studentText}
     }
   });
 });
-
-
-//page3과 연결
-document.addEventListener('DOMContentLoaded', () => {
-  const nextButton = document.getElementById('checkGraphBtn');
-  if (nextButton) {
-    nextButton.addEventListener('click', () => {
-      window.location.href = 'page3.html';
-    });
-  }
-});
