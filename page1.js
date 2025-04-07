@@ -12,7 +12,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   const canvas = document.getElementById('graphCanvas');
   const ctx = canvas.getContext('2d');
-  const padding = 60;
+  const padding = 65;
 
   // 캔버스 설정 (DPR 및 리사이징 대응)
   function setupCanvas() {
@@ -52,10 +52,10 @@ document.addEventListener('DOMContentLoaded', () => {
       const xValues = numericData.map(row => row[0]);
       const yValues = numericData.map(row => row[1]);
 
-      const minY = Math.min(...yValues);
       const maxY = Math.max(...yValues);
-      const yMin = Math.floor(minY - 5);
+      const yMin = 0;
       const yMax = Math.ceil(maxY + 5);
+
 
       axisMax = { x: xValues.length, y: yMax - yMin };
       window.yStart = yMin;
@@ -77,7 +77,7 @@ document.addEventListener('DOMContentLoaded', () => {
       row.className = i % 2 === 0 ? 'bg-white' : 'bg-gray-50';
       data[i].forEach(cell => {
         const td = document.createElement('td');
-        td.className = 'px-2 py-1';
+        td.className = 'px-2 py-1 text-center';
         td.textContent = cell.trim();
         row.appendChild(td);
       });
@@ -172,8 +172,8 @@ document.addEventListener('DOMContentLoaded', () => {
     // 축과 점
     ctx.strokeStyle = '#000';
     ctx.lineWidth = 1.5;
-    drawArrow(0, 0, usableWidth + 10, 0);
-    drawArrow(0, 0, 0, usableHeight + 10);
+    drawArrow(-20, 0, usableWidth + 10, 0);
+    drawArrow(0, -20, 0, usableHeight + 10);
 
     ctx.fillStyle = 'red';
     points.forEach(p => {
@@ -186,7 +186,17 @@ document.addEventListener('DOMContentLoaded', () => {
       ctx.fill();
     });
 
+    // 원점에 'O' 표시
+    ctx.font = '14px sans-serif';
+    ctx.fillStyle = '#000';
+    ctx.textAlign = 'right';
+    ctx.textBaseline = 'top';
+    ctx.fillText('O', -8, -15);
+
+
+
     ctx.restore();
+
 
     // 눈금 및 축 라벨
     ctx.font = '12px sans-serif';
@@ -206,6 +216,9 @@ document.addEventListener('DOMContentLoaded', () => {
     ctx.textBaseline = 'middle';
     for (let y = 0; y <= axisMax.y; y += tickStepY) {
       const yLabel = y + window.yStart;
+       if (yLabel === 0) continue;
+
+
       const yPos = height - padding - y * yUnit;
       ctx.fillText(yLabel, padding - 10, yPos);
     }
@@ -227,23 +240,27 @@ document.addEventListener('DOMContentLoaded', () => {
     const height = canvas.height / dpr;
     const usableWidth = width - padding * 2;
     const usableHeight = height - padding * 2;
-
+  
     const numericData = uploadedData.slice(1).map(row => row.map(Number));
     const xValues = numericData.map(row => row[0]);
     const uniqueX = [...new Set(xValues)].sort((a, b) => a - b);
     const xStep = usableWidth / (uniqueX.length + 1);
     const yUnit = usableHeight / axisMax.y;
-
+  
     const offsetX = evt.clientX - rect.left;
     const offsetY = evt.clientY - rect.top;
-    const graphX = offsetX - padding;
+  
+    const graphX = offsetX - padding - 5; // -5는 drawGrid()와 일치
     const graphY = height - offsetY - padding;
-
+  
     const xIndex = Math.round(graphX / xStep) - 1;
     const x = uniqueX[xIndex];
     const y = graphY / yUnit + window.yStart;
+  
+    if (x === undefined) return null;
     return { x, y };
   }
+  
 
   // 가장 가까운 CSV 좌표로 스냅
   function snapToNearestCSV(point) {
@@ -265,7 +282,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const point = snapToNearestCSV(getCanvasCoords(e));
     if (!point) return;
 
-    const exists = points.findIndex(p => Math.hypot(p.x - point.x, p.y - point.y) < 0.1);
+    const exists = points.findIndex(p => Math.hypot(p.x - point.x, p.y - point.y) < 0.3);
     if (exists >= 0) {
       points.splice(exists, 1);
       drawGrid();
@@ -316,6 +333,59 @@ document.addEventListener('DOMContentLoaded', () => {
     nextBtn.classList.toggle('opacity-50', !allCorrect);
     nextBtn.classList.toggle('cursor-not-allowed', !allCorrect);
   });
+
+  //피드백 버튼 핸들러 추가
+  let feedbackClickCount = 0;
+
+  document.getElementById('feedbackBtn').addEventListener('click', () => {
+    feedbackClickCount++;
+  
+    const numericData = uploadedData.slice(1).map(row => ({ x: Number(row[0]), y: Number(row[1]) }));
+    const correctPoints = points.filter(p => numericData.some(d => Math.abs(d.x - p.x) < 0.1 && Math.abs(d.y - p.y) < 0.1));
+    const correctCount = correctPoints.length;
+  
+    const allCorrect = correctCount === numericData.length;
+  
+    // 첫 번째 클릭: 개수만 알려주기
+    if (feedbackClickCount === 1) {
+      Swal.fire({
+        icon: allCorrect ? 'success' : 'info',
+        title: `총 ${numericData.length}개 중 ${correctCount}개가 정확해요.`,
+        text: allCorrect ? '모든 점이 정확하게 찍혔어요!' : '다시 확인해보세요.',
+        confirmButtonText: '확인'
+      });
+    } 
+    // 두 번째부터는 틀린 x좌표를 알려주기
+    else {
+      const incorrectPoints = numericData.filter(d => {
+        return !points.some(p => Math.abs(p.x - d.x) < 0.1 && Math.abs(p.y - d.y) < 0.1);
+      });
+  
+      const wrongXList = incorrectPoints.map(p => p.x).join(', ');
+  
+      Swal.fire({
+        icon: allCorrect ? 'success' : 'warning',
+        title: allCorrect
+          ? '모든 점이 맞았어요!'
+          : `틀린 x좌표: ${wrongXList}`,
+        text: allCorrect ? '이제 다음 단계로 넘어가세요!' : '위 좌표를 다시 확인해보세요.',
+        confirmButtonText: '확인'
+      });
+    }
+  
+    const nextBtn = document.getElementById('checkGraphBtn');
+    nextBtn.disabled = !allCorrect;
+    nextBtn.classList.toggle('bg-green-500', allCorrect);
+    nextBtn.classList.toggle('hover:bg-green-600', allCorrect);
+    nextBtn.classList.toggle('cursor-pointer', allCorrect);
+    nextBtn.classList.toggle('bg-gray-400', !allCorrect);
+    nextBtn.classList.toggle('opacity-50', !allCorrect);
+    nextBtn.classList.toggle('cursor-not-allowed', !allCorrect);
+  });
+  
+
+
+
 
   // 다음 페이지로 이동 (로컬 저장 포함)
   document.getElementById('checkGraphBtn').addEventListener('click', () => {

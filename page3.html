@@ -1,71 +1,40 @@
 <!DOCTYPE html>
 <html lang="ko">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>그래프 해석</title>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <style>
-        body { font-family: Arial, sans-serif; text-align: center; }
-        canvas { max-width: 600px; margin: 20px auto; }
-        #interpretations { margin-top: 20px; text-align: left; max-width: 600px; margin: auto; }
-    </style>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>3단계_다양한 그래프 해석하기</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0"></script>
+  <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet" />
 </head>
-<body>
-    <h1>그래프 생성 및 해석</h1>
-    <button onclick="generateGraph()">그래프 생성하기</button>
-    <canvas id="graphCanvas"></canvas>
-    <br>
-    <input type="text" id="interpretation" placeholder="그래프 해석을 입력하세요">
-    <button onclick="submitInterpretation()">제출</button>
-    <div id="interpretations"></div>
 
-    <script>
-        let chart;
+<body class="bg-gray-100 min-h-screen p-6">
+  <header class="bg-white shadow sticky top-0 z-10 text-center py-4">
+    <h1 class="text-2xl font-bold mb-2">3단계: 다양한 그래프 해석하기</h1>
+    <button onclick="generateGraph()" class="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600">
+      그래프 생성하기
+    </button>
+  </header>
 
-        function generateGraph() {
-            const ctx = document.getElementById('graphCanvas').getContext('2d');
-            const graphTypes = ['linear', 'exponential', 'sinusoidal'];
-            const selectedType = graphTypes[Math.floor(Math.random() * graphTypes.length)];
-            let data = [];
+  <main class="max-w-3xl mx-auto mt-6">
+    <canvas id="graphCanvas" width="800" height="400" class="mx-auto mb-6"></canvas>
 
-            for (let i = 0; i < 10; i++) {
-                if (selectedType === 'linear') {
-                    data.push(i * 2);
-                } else if (selectedType === 'exponential') {
-                    data.push(Math.pow(2, i % 5));
-                } else if (selectedType === 'sinusoidal') {
-                    data.push(Math.sin(i) * 10 + 10);
-                }
-            }
+    <textarea id="interpretation"
+      placeholder="그래프 해석을 입력하세요"
+      class="w-full border border-gray-300 rounded p-3 text-base mb-4" rows="5"></textarea>
 
-            if (chart) chart.destroy();
+    <div class="flex justify-center gap-4 mb-4">
+      <button onclick="requestFeedback()" id="feedbackBtn"
+        class="bg-purple-500 text-white px-4 py-2 rounded hover:bg-purple-600">
+        피드백 받기
+      </button>
+    </div>
 
-            chart = new Chart(ctx, {
-                type: 'line',
-                data: {
-                    labels: [...Array(10).keys()],
-                    datasets: [{
-                        label: '그래프',
-                        data: data,
-                        borderColor: 'blue',
-                        fill: false
-                    }]
-                }
-            });
-        }
+    <div id="feedback" class="bg-white p-4 rounded shadow text-sm text-gray-800 whitespace-pre-line mb-6 hidden"></div>
 
-        function submitInterpretation() {
-            const text = document.getElementById('interpretation').value;
-            if (!text) return;
+    <div id="interpretations" class="space-y-2 text-sm text-gray-700"></div>
+  </main>
 
-            const interpretationsDiv = document.getElementById('interpretations');
-            const newEntry = document.createElement('p');
-            newEntry.textContent = `학생: ${text}`;
-            interpretationsDiv.appendChild(newEntry);
-
-            document.getElementById('interpretation').value = '';
-        }
-    </script>
+  <script src="page3.js"></script>
 </body>
 </html>
