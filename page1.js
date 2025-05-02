@@ -93,7 +93,9 @@ function drawGraph() {
   const margin = 65;
   const usableWidth = width - margin * 2;
   const usableHeight = height - margin * 2;
-  const stepX = usableWidth / (xLabels.length + 1);
+  
+  // stepX 계산
+  const stepX = usableWidth / (xLabels.length - 1);
 
   tickStepY = getNiceTickInterval(yMax);
 
@@ -112,7 +114,7 @@ function drawGraph() {
 
   ctx.strokeStyle = "#eee";
   for (let i = 0; i < xLabels.length; i++) {
-    const x = stepX * (i + 1);
+    const x = stepX * i;
     ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, usableHeight); ctx.stroke();
   }
   for (let i = 0; i <= ySteps; i++) {
@@ -125,6 +127,7 @@ function drawGraph() {
   drawArrow(ctx, -20, 0, usableWidth + 10, 0);
   drawArrow(ctx, 0, -20, 0, usableHeight + 10);
 
+  //점 찍기
   ctx.fillStyle = "red";
   plottedPoints.forEach((point) => {
     const x = stepX * (point.i + 1);
