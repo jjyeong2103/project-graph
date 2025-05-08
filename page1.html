@@ -10,16 +10,19 @@
 <body class="bg-gray-100 p-6">
   <div class="max-w-6xl mx-auto bg-white p-6 rounded-lg shadow">
     <h1 class="text-2xl font-bold mb-6">1단계: 그래프 나타내기</h1>
+    <div class="bg-green-50 border-l-4 border-green-400 p-4 mb-4 rounded">
+      <p class="text-green-700">
+        원하는 자료를 선택한 후, 좌표평면 위에 점을 찍어 그래프를 완성해 보세요
+      </p>
+    </div>
     <div class="grid grid-cols-2 gap-6">
-      
       <!-- 왼쪽: 데이터 선택 -->
       <div>
-        <h2 class="text-lg font-semibold mb-2">데이터 선택</h2>
+        <h2 class="text-lg font-semibold mb-2">자료 선택</h2>
 
         <!-- 드롭다운 -->
         <div class="mb-4">
           <select id="dataSelect" class="w-full border border-gray-300 rounded px-3 py-2">
-            <option value="">-- 데이터를 선택하세요 --</option>
           </select>
         </div>
 
@@ -28,32 +31,20 @@
 
       <!-- 오른쪽: 캔버스 영역 -->
       <div>
-        <h2 class="text-lg font-semibold mb-2">그래프에 점 찍기</h2>
+        <h2 class="text-lg font-semibold mb-2">좌표평면 위에 점 찍기</h2>
         <div id="graphContainer" class="relative border bg-gray-50 h-96">
-          <canvas id="graphCanvas" width="600" height="400" class="border w-full h-full"></canvas>
+          <canvas id="graphCanvas" width="800" height="400" class="border w-full h-full"></canvas>
         </div>
         <div class="mt-4 flex justify-between">
           <button id="checkGraphBtn" class="px-4 py-2 text-base font-medium rounded bg-yellow-500 text-white">피드백 받기</button>
           <button id="clearPointsBtn" class="px-4 py-2 text-base font-medium rounded bg-red-500 text-white hover:bg-red-600">모든 점 지우기</button>
           <!-- 여기를 수정 -->
-          <button id="nextStepBtn" class="px-4 py-2 text-base font-medium rounded bg-green-600 text-white">다음 단계</button>
+          <button id="nextStepBtn" class="bg-gray-400 text-white px-4 py-2 rounded" disabled>다음 단계</button>
+
         </div>
         <div id="graphFeedback" class="mt-2 text-sm text-red-600"></div>
       </div>
     </div>
   </div>
-
-  <script>
-    // HTML에서 직접 연결: 모듈 안 쓰고 global 등록
-    function handleNextStep() {
-      const selectedIndex = document.getElementById("dataSelect").value;
-      if (selectedIndex === '') {
-        alert('데이터를 선택하세요!');
-        return;
-      }
-      localStorage.setItem('selectedDataIndex', selectedIndex);
-      window.location.href = 'page2.html';
-    }
-  </script>
 </body>
 </html>

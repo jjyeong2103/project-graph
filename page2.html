@@ -10,6 +10,10 @@
 <body class="bg-gray-100 p-6">
   <div class="max-w-4xl mx-auto bg-white p-6 rounded-lg shadow">
     <h1 class="text-2xl font-bold mb-4">2단계: 그래프 해석하기</h1>
+    <div class="border-l-4 border-green-500 bg-green-50 text-green-700 p-4 mb-4 rounded">
+      두 변수 사이의 관계가 나타난 그래프에서 얻을 수 있는 정보들을 작성해 보세요<br>
+      (전체적인 개형이나 개별 점의 좌표 등에 주목하여 해석해 보세요)
+    </div>
 
     <!-- 그래프 영역 -->
     <div id="graphContainer" class="relative border bg-gray-50 h-96 mb-4">
@@ -22,16 +26,19 @@
     placeholder="그래프 해석하기 과정
     1. 모둠 내에서 토론하여 이 그래프에 대한 해석 작성하기
     2. 피드백 받기 버튼을 눌러 피드백 받기
-    3. 모둠 내에서 토론하여 피드백을 반영한 그래프 해석 작성하기 "></textarea>
+    3. 모둠 내에서 다시 토론하여 피드백을 반영한 그래프 해석 작성하기
+       (단, 피드백 받은 결과가 긍정적인 경우는 그대로 둔 채로 이어서 작성하면 됩니다) "></textarea>
 
     <!-- 버튼 -->
     <div class="flex justify-center gap-4 mb-4">
     <button id="feedbackBtn" class="bg-blue-500 text-white px-4 py-2 rounded">피드백 받기</button>
 
+
     <!-- 피드백 출력 -->
     <div id="feedback" class="mt-4 p-4 bg-gray-100 border rounded hidden"></div>
 
-    <button onclick="location.href='page3.html'" class="bg-green-500 text-white px-4 py-2 rounded">다음 단계로 가기</button>
+    <button id="nextStepBtn" onclick="location.href='page3.html'" disabled class="bg-gray-400 text-white px-4 py-2 rounded">다음 단계로 가기</button>
+
 
   </div>
   </body>
