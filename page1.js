@@ -206,7 +206,7 @@ function drawGraph() {
 function handleCanvasClick(e) {
   if (!selectedData.length) return;
 
-  const rect = canvas.getBoundingClientRect();  // CSS 픽셀 기준
+  const rect = canvas.getBoundingClientRect();  
   const margin = 65;
 
   const usableWidth = rect.width - margin * 2;
@@ -219,7 +219,7 @@ function handleCanvasClick(e) {
   const i = Math.round((mouseX - margin) / stepX) - (xMin === 0 ? 0 : 1);
   if (i < 0 || i >= xLabels.length) return;
 
-  // ✅ graphOriginY도 CSS 기준으로
+  
   const graphOriginY = rect.height - margin;
   let yInGraph = graphOriginY - mouseY;
   yInGraph = Math.max(0, Math.min(yInGraph, usableHeight));
@@ -248,6 +248,7 @@ function setupCanvas(canvas) {
   ctx.scale(dpr, dpr);
   return ctx;
 }
+
 
 // 화살표 그리기
 function drawArrow(ctx, fromX, fromY, toX, toY) {
@@ -291,7 +292,7 @@ function checkGraph() {
   const selectedIndex = parseInt(document.getElementById("dataSelect").value);
   const selectedDataName = predefinedData[selectedIndex]?.name || '';
 
-  const errorThreshold = 1;
+  const errorThreshold = 2;
   let incorrectX = [];
   for (let i = 0; i < selectedData.length; i++) {
     const correctY = selectedData[i].y;
