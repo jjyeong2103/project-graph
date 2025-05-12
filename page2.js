@@ -1,5 +1,7 @@
+// page2.js - 그래프 해석 페이지 스크립트
 import Swal from 'sweetalert2';
 
+// === [ 전역 변수 선언 ] ===
 let canvas, ctx;
 let selectedData = [];
 let xLabels = [];
@@ -8,6 +10,7 @@ let tickStepY = 0;
 let xAxisLabel = 'x';
 let yAxisLabel = 'y';
 
+// 미리 정의된 데이터 목록
 const predefinedData = [
   { name: "추의 개수(개)에 따른 용수철의 길이(cm)", data: [{ x: "1", y: 4 }, { x: "2", y: 8 }, { x: "3", y: 12 }, { x: "4", y: 16 }, { x: "5", y: 20 }] },
   { name: "모자 뜨기 꾸러미(개)에 따른 모자의 개수(개)", data: [{ x: "1", y: 2 }, { x: "2", y: 4 }, { x: "3", y: 6 }, { x: "4", y: 8 }, { x: "5", y: 10 }] },
@@ -16,18 +19,14 @@ const predefinedData = [
   { name: "달리기를 시작한 시간(분)에 따른 맥박 수(회)", data: [{ x: "0", y: 60 }, { x: "1", y: 100 }, { x: "2", y: 130 }, { x: "3", y: 140 }, { x: "4", y: 150 }] }
 ];
 
+// === [ 페이지 로드 시 처리 ] ===
 document.addEventListener('DOMContentLoaded', () => {
   canvas = document.getElementById('graphCanvas');
   ctx = canvas.getContext('2d');
 
   const selectedIndex = parseInt(localStorage.getItem('selectedDataIndex'));
   if (isNaN(selectedIndex) || selectedIndex < 0 || selectedIndex >= predefinedData.length) {
-    Swal.fire({
-      icon: 'error',
-      title: '데이터 없음',
-      text: '이전 단계에서 선택된 데이터가 없습니다.',
-      confirmButtonText: '확인'
-    });
+    Swal.fire({ icon: 'error', title: '데이터 없음', text: '이전 단계에서 선택된 데이터가 없습니다.', confirmButtonText: '확인' });
     return;
   }
 
@@ -47,10 +46,10 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   drawGraph();
-
   document.getElementById('feedbackBtn').addEventListener('click', requestFeedback);
 });
 
+// === [ 그래프 그리기 ] ===
 function drawGraph() {
   const dpr = window.devicePixelRatio || 1;
   const rect = canvas.getBoundingClientRect();
@@ -60,7 +59,6 @@ function drawGraph() {
   canvas.height = height * dpr;
   ctx.setTransform(1, 0, 0, 1, 0, 0);
   ctx.scale(dpr, dpr);
-
   ctx.clearRect(0, 0, width, height);
 
   const margin = 65;
@@ -79,39 +77,35 @@ function drawGraph() {
   ctx.translate(margin, height - margin);
   ctx.scale(1, -1);
 
+  // 배경 격자
   ctx.strokeStyle = "#eee";
   ctx.lineWidth = 1;
   for (let i = 0; i < xLabels.length; i++) {
     const x = stepX * (i + 1);
-    ctx.beginPath();
-    ctx.moveTo(x, 0);
-    ctx.lineTo(x, usableHeight);
-    ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, usableHeight); ctx.stroke();
   }
   for (let y = 0; y <= adjustedYMax; y += tickStepY) {
     const yPos = (y / adjustedYMax) * usableHeight;
-    ctx.beginPath();
-    ctx.moveTo(0, yPos);
-    ctx.lineTo(usableWidth, yPos);
-    ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(0, yPos); ctx.lineTo(usableWidth, yPos); ctx.stroke();
   }
 
+  // 축과 화살표
   ctx.strokeStyle = "#000";
   ctx.lineWidth = 1.5;
   drawArrow(ctx, -20, 0, usableWidth + 10, 0);
   drawArrow(ctx, 0, -20, 0, usableHeight + 10);
 
+  // 데이터 점 찍기
   ctx.fillStyle = "blue";
   selectedData.forEach((p, i) => {
     const x = stepX * (i + 1);
     const y = (p.y / adjustedYMax) * usableHeight;
-    ctx.beginPath();
-    ctx.arc(x, y, 6, 0, 2 * Math.PI);
-    ctx.fill();
+    ctx.beginPath(); ctx.arc(x, y, 6, 0, 2 * Math.PI); ctx.fill();
   });
 
   ctx.restore();
 
+  // 축 라벨 및 눈금
   ctx.font = '12px sans-serif';
   ctx.fillStyle = '#333';
   ctx.textAlign = 'center';
@@ -137,10 +131,10 @@ function drawGraph() {
   ctx.rotate(-Math.PI / 2);
   ctx.fillText(yAxisLabel, 0, 0);
   ctx.restore();
-
   ctx.fillText('O', margin - 10, height - margin + 10);
 }
 
+// 화살표 그리기 보조 함수
 function drawArrow(ctx, fromX, fromY, toX, toY) {
   const headLength = 8;
   const angle = Math.atan2(toY - fromY, toX - fromX);
@@ -153,13 +147,21 @@ function drawArrow(ctx, fromX, fromY, toX, toY) {
   ctx.stroke();
 }
 
+// Y축 눈금 계산 보조 함수
+function getNiceTickInterval(range) {
+  const rough = range / 10;
+  const pow10 = Math.pow(10, Math.floor(Math.log10(rough)));
+  const fraction = rough / pow10;
+  if (fraction <= 1) return 1 * pow10;
+  if (fraction <= 2) return 2 * pow10;
+  if (fraction <= 5) return 5 * pow10;
+  return 10 * pow10;
+}
+
+// === [ 피드백 요청 함수 (Netlify Functions 사용) ] ===
 async function requestFeedback() {
   const interpretationInput = document.getElementById('interpretation');
   const feedbackDiv = document.getElementById('feedback');
-
-  const feedbackClickCount = window.feedbackClickCount || 1;
-  const pointsLog = window.pointsLog || '';
-  const feedbackLog = window.feedbackLog || '';
 
   const studentText = interpretationInput.value.trim();
   if (!studentText) {
@@ -174,7 +176,6 @@ async function requestFeedback() {
   const selectedIndex = parseInt(localStorage.getItem('selectedDataIndex'));
   const selectedDataName = predefinedData[selectedIndex]?.name || '';
 
-  const csvData = selectedData.map(p => `${p.x},${p.y}`).join('\n');
   const prompt = `
   <역할>
   너는 중학교 1학년 수학 교사야. 
@@ -182,60 +183,45 @@ async function requestFeedback() {
   피드백을 쓸 때 학생 이름을 "${studentName}"처럼 자연스럽게 넣어도 좋아.
   피드백은 단계별로 순차적으로 제공할 거야.
   힌트를 한번에 다 주지마. 학생의 답안이 달라지는 것에 따라 피드백을 줘.
-</역할>
+ </역할>
 
-<그래프 정보>
-[x축]: ${xAxisLabel}
-[y축]: ${yAxisLabel}
-</그래프 정보>
+  <그래프 정보>
+  [x축]: ${xAxisLabel}
+  [y축]: ${yAxisLabel}
+  </그래프 정보>
 
-<피드백 단계>
-1. 학생이 "잘 모르겠다" 같은 답변을 하면, 우선 그래프의 전체적인 모습(패턴, 그래프의 모양 등)에 대한 해석을 도와주는 피드백을 줘.
-2. 학생 답변이 (1,2), (2,4), (3,6)처럼 단순히 점만 나열되어 있으면, 각각의 점을 바탕으로 x축과 y축을 연결해서 해석하도록 유도해줘.
-3. 한꺼번에 주지 말고, 학생이 각각의 점에 대해 설명했다면 그래프 전체 모습에 대해 힌트를 주고, 반대로 전체적인 모습만 말했다면 각각의 점을 다시 살펴보도록 유도해줘.
-4. 구간에 대한 관찰, 전체적인 규칙성에 대한 피드백도 추가해 줘.
-5. 마지막으로 학생 상황에 맞는 개선 방향을 제안해 줘.
-6. 학생이 단위도 틀리지 않고, 각각의 점과 전체적인 해석을 모두 잘 했다면, 마지막에 "다음 단계로 넘어가 보세요!"라고 안내해 줘.
-</피드백 단계>
+  <피드백 단계>
+  1. 학생이 "잘 모르겠다" 같은 답변을 하면, 우선 그래프의 전체적인 모습(패턴, 그래프의 모양 등)에 대한 해석을 도와주는 피드백을 줘.
+  2. 학생 답변이 (1,2), (2,4), (3,6)처럼 단순히 점만 나열되어 있으면, 각각의 점을 바탕으로 x축과 y축을 연결해서 해석하도록 유도해줘.
+  3. 한꺼번에 주지 말고, 학생이 각각의 점에 대해 설명했다면 그래프 전체 모습에 대해 힌트를 주고, 반대로 전체적인 모습만 말했다면 각각의 점을 다시 살펴보도록 유도해줘.
+  4. 구간에 대한 관찰, 전체적인 규칙성에 대한 피드백도 추가해 줘.
+  5. 마지막으로 학생 상황에 맞는 개선 방향을 제안해 줘.
+  6. 학생이 단위도 틀리지 않고, 각각의 점과 전체적인 해석을 모두 잘 했다면, 마지막에 "다음 단계로 넘어가 보세요!"라고 안내해 줘.
+  </피드백 단계>
 
-<피드백 제시 방법>
-중학교 1학년 학생이 이해하기 쉽게 간결하게 표현하는데, 어미는 반드시 '~하세요', '~보세요' 방식으로 써줘.
-"질적 접근", "점별 접근" 같은 용어는 절대 쓰지 말고, 대신 그래프를 해석할 때 전체적인 모습과 하나하나의 점이 어떻게 변하는지 쉽게 설명해줘.
-또한 HTML로 출력할 거니까 <div> 태그로 묶어서 보여주고, 중요한 부분은 <strong> 태그로 강조해줘.
-</피드백 제시 방법>
+  <피드백 제시 방법>
+  중학교 1학년 학생이 이해하기 쉽게 간결하게 표현하는데, 어미는 반드시 '~하세요', '~보세요' 방식으로 써줘.
+  "질적 접근", "점별 접근" 같은 용어는 절대 쓰지 말고, 대신 그래프를 해석할 때 전체적인 모습과 하나하나의 점이 어떻게 변하는지 쉽게 설명해줘.
+  또한 HTML로 출력할 거니까 <div> 태그로 묶어서 보여주고, 중요한 부분은 <strong> 태그로 강조해줘.
+  </피드백 제시 방법>
 
-⚠️ 매우 중요:
-- 피드백을 줄 때, 학생 답안에서 **단위(예: cm, 회 등)가 빠지거나 틀린 경우** 반드시 지적해야 해. 단위가 빠지면 내용이 맞더라도 **"아주 잘했다"**고 평가하지 말고, 단위도 꼭 포함해서 다시 써야 한다고 강조해.
-- 숫자마다 단위를 반복하지 않아도 되며, "추의 개수가 1, 2, 3개일 때, 용수철의 길이는 4, 8, 12cm가 된다"처럼 마지막에 단위를 붙이는 건 그대로 인정해.
-- 그래프 해석은 반드시 **x축(독립변수, 가로축) → y축(종속변수, 세로축)** 방향으로만 해석해야 해. x축의 값이 변할 때 y축이 어떻게 변하는지 중심으로 써야 해.
-- 학생 답변에서 y축(세로축)을 기준으로 해석하는 내용은 절대 포함하지 마.
-- 학생의 답변이 이미 명확하다면 추가적인 설명(예: 가로축/세로축 언급, 불필요한 예시 제시 등)은 하지 말고, 짧게 칭찬만 해 줘.
-- 피드백은 반드시 **수학적인 해석**만 제공해야 하며, 그래프의 패턴, 수의 규칙성, 변수 간 관계 등 수학적인 관점에서만 평가해. 용수철이 왜 늘어나는지 같은 과학적 이유는 절대 언급하지 마.
-- 학생이 그래프 해석과 전혀 관련 없는 답변을 하면 "그래프 해석과 관련없는 답변입니다."라고만 출력하고 다른 설명은 하지 마.
-`;
-
+  ⚠ 매우 중요:
+  - 피드백을 줄 때, 학생 답안에서 **단위(예: cm, 회 등)가 빠지거나 틀린 경우** 반드시 지적해야 해. 단위가 빠지면 내용이 맞더라도 **"아주 잘했다"**고 평가하지 말고, 단위도 꼭 포함해서 다시 써야 한다고 강조해.
+  - 숫자마다 단위를 반복하지 않아도 되며, "추의 개수가 1, 2, 3개일 때, 용수철의 길이는 4, 8, 12cm가 된다"처럼 마지막에 단위를 붙이는 건 그대로 인정해.
+  - 그래프 해석은 반드시 **x축(독립변수, 가로축) → y축(종속변수, 세로축)** 방향으로만 해석해야 해. x축의 값이 변할 때 y축이 어떻게 변하는지 중심으로 써야 해.
+  - 학생 답변에서 y축(세로축)을 기준으로 해석하는 내용은 절대 포함하지 마.
+  - 학생의 답변이 이미 명확하다면 추가적인 설명(예: 가로축/세로축 언급, 불필요한 예시 제시 등)은 하지 말고, 짧게 칭찬만 해 줘.
+  - 피드백은 반드시 **수학적인 해석**만 제공해야 하며, 그래프의 패턴, 수의 규칙성, 변수 간 관계 등 수학적인 관점에서만 평가해. 용수철이 왜 늘어나는지 같은 과학적 이유는 절대 언급하지 마.
+  - 학생이 그래프 해석과 전혀 관련 없는 답변을 하면 "그래프 해석과 관련없는 답변입니다."라고만 출력하고 다른 설명은 하지 마.
+  `; 
   feedbackDiv.textContent = '피드백을 가져오는 중입니다...';
   feedbackDiv.classList.remove('hidden');
 
   try {
-    const response = await fetch('https://api.openai.com/v1/chat/completions', {
+    const response = await fetch('/.netlify/functions/feedback', {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${import.meta.env.VITE_OPENAI_API_KEY}`
-      },
-      body: JSON.stringify({
-        model: 'gpt-4',
-        messages: [
-          { role: 'system', content:
-            '너는 중학교 수학 교사로서 학생의 그래프 해석을 점진적으로 피드백하는 역할이야.' },
-          { role: 'user', content: `
-            ${prompt}
-          <학생 답변>
-          ${studentText}
-        `}
-        ]
-      }),
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ studentText, prompt })
     });
 
     const result = await response.json();
@@ -244,16 +230,16 @@ async function requestFeedback() {
 
     const nextStepBtn = document.getElementById('nextStepBtn');
     if (feedback.includes('다음 단계로')) {
-    nextStepBtn.disabled = false;
-    nextStepBtn.classList.remove('bg-gray-400');
-    nextStepBtn.classList.add('bg-green-500');
-}   else {
-    nextStepBtn.disabled = true;
-    nextStepBtn.classList.remove('bg-green-500');
-    nextStepBtn.classList.add('bg-gray-400');
-}
+      nextStepBtn.disabled = false;
+      nextStepBtn.classList.remove('bg-gray-400');
+      nextStepBtn.classList.add('bg-green-500');
+    } else {
+      nextStepBtn.disabled = true;
+      nextStepBtn.classList.remove('bg-green-500');
+      nextStepBtn.classList.add('bg-gray-400');
+    }
 
-    // ✅ 구글폼 전송
+    // 구글폼 기록
     const formUrl = 'https://docs.google.com/forms/d/e/1FAIpQLSeN2JCNj5pzz0r3TwRagOtK6oSCIZQoEYsCJF_crbmykdJkyg/formResponse';
     const formData = new FormData();
     formData.append('entry.1271583286', studentId);
@@ -263,25 +249,10 @@ async function requestFeedback() {
     formData.append('entry.760324373', studentText);
     formData.append('entry.650944383', feedback);
 
-    fetch(formUrl, {
-      method: 'POST',
-      mode: 'no-cors',
-      body: formData
-    });
+    fetch(formUrl, { method: 'POST', mode: 'no-cors', body: formData });
 
   } catch (error) {
     console.error(error);
     feedbackDiv.textContent = '피드백 요청 중 오류가 발생했습니다.';
   }
-}
-
-function getNiceTickInterval(range) {
-  const rough = range / 10;
-  const pow10 = Math.pow(10, Math.floor(Math.log10(rough)));
-  const fraction = rough / pow10;
-
-  if (fraction <= 1) return 1 * pow10;
-  if (fraction <= 2) return 2 * pow10;
-  if (fraction <= 5) return 5 * pow10;
-  return 10 * pow10;
 }
