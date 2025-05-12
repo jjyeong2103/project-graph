@@ -3,6 +3,8 @@ document.addEventListener('DOMContentLoaded', () => {
   let selectedType = '';
   let selectedXLabel = '';
   let selectedYLabel = '';
+  let xAxisLabel = '';
+  let yAxisLabel = '';
 
   // 좌표축, 원점 표시 플러그인
   const axisArrowsPlugin = {
@@ -83,7 +85,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
   function generateGraph() {
     const randomSet = problemSets[Math.floor(Math.random() * problemSets.length)];
-    const { xAxisLabel, yAxisLabel, pattern, question } = randomSet;
+    const { pattern, question } = randomSet;
+    xAxisLabel = randomSet.xAxisLabel;
+    yAxisLabel = randomSet.yAxisLabel;
 
     document.getElementById('questionText').textContent = question;
     selectedXLabel = xAxisLabel;
