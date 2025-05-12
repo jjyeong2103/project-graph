@@ -218,11 +218,22 @@ async function requestFeedback() {
   feedbackDiv.classList.remove('hidden');
 
   try {
-    const response = await fetch('/.netlify/functions/feedback', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ studentText, prompt })
-    });
+    const response = await fetch('https://api.openai.com/v1/chat/completions', {
+  method: 'POST',
+  headers: {
+    'Content-Type': 'application/json',
+    'Authorization': `Bearer ${import.meta.env.VITE_OPENAI_API_KEY}`
+  },
+  body: JSON.stringify({
+    model: 'gpt-4',
+    messages: [
+      { role: 'system', content: '너는 중학교 수학 교사로서 학생의 그래프 해석을 점진적으로 피드백하는 역할이야.' },
+      { role: 'user', content: `${prompt}\n<학생 답변>\n${studentText}` }
+      ],
+      temperature: 0.6
+    })
+  });
+
 
     const result = await response.json();
     const feedback = result.choices?.[0]?.message?.content || '피드백을 가져오는 데 실패했습니다.';
