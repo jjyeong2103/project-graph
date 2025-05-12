@@ -26,6 +26,6 @@ document.getElementById('startBtn').addEventListener('click', () => {
     body: formData
   }).finally(() => {
     // 전송 완료 여부와 상관없이 page1.html로 이동
-    window.location.href = '/page1.html';
+    window.location.href = 'page1.html';
   });
 });
