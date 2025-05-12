@@ -1,5 +1,2 @@
-[functions]
-  directory = "netlify/functions"
-
 [functions.gptProxy]
   timeout = 26
