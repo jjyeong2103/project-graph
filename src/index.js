@@ -8,7 +8,7 @@ document.addEventListener('DOMContentLoaded', () => {
       const currentTime = new Date().toLocaleString();
   
       if (!studentId || !studentName) {
-        alert('학번과 이름을 모두 입력해주세요.');
+        alert('학번과 이름을 모두 입력해 주세요.'); 
         return;
       }
   
