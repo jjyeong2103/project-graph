@@ -13,7 +13,7 @@ let feedbackClickCount = 0;      // 피드백 클릭 횟수
 let xMin = 0;                    // x축 최소값 (0 여부 확인용)
 let completedDataIndices = new Set();  // 완료한 데이터셋 index 기록
 const MIN_REQUIRED_SETS = 3;           // 최소 완료해야 할 개수
-
+let studentGraphs = {};  // 자료 인덱스별로 점 배열 저장
 
 // 초기 설정
 document.addEventListener("DOMContentLoaded", () => {
@@ -66,8 +66,8 @@ document.addEventListener("DOMContentLoaded", () => {
 const predefinedData = [
   { name: "추의 개수(개)에 따른 용수철의 길이(cm)", data: [{ x: "1", y: 4 }, { x: "2", y: 8 }, { x: "3", y: 12 }, { x: "4", y: 16 }, { x: "5", y: 20 }] },
   { name: "모자 뜨기 꾸러미(개)에 따른 모자의 개수(개)", data: [{ x: "1", y: 2 }, { x: "2", y: 4 }, { x: "3", y: 6 }, { x: "4", y: 8 }, { x: "5", y: 10 }] },
-  { name: "동영상 업로드 후 경과 일수(일)에 따른 조회 수(회)", data: [{ x: "1", y: 15 }, { x: "2", y: 30 }, { x: "3", y: 60 }, { x: "4", y: 85 }, { x: "5", y: 105 }] },
   { name: "반려 식물의 키를 관찰하기 시작한 주차(주)에 따른 식물의 키(cm)", data: [{ x: "1", y: 2 }, { x: "2", y: 4 }, { x: "3", y: 6 }, { x: "4", y: 8 }, { x: "5", y: 10 }] },
+  { name: "동영상 업로드 후 경과 일수(일)에 따른 조회 수(회)", data: [{ x: "1", y: 15 }, { x: "2", y: 30 }, { x: "3", y: 60 }, { x: "4", y: 85 }, { x: "5", y: 105 }] },
   { name: "달리기를 시작한 시간(분)에 따른 맥박 수(회)", data: [{ x: "0", y: 60 }, { x: "1", y: 100 }, { x: "2", y: 130 }, { x: "3", y: 140 }, { x: "4", y: 150 }] }
 ];
 
@@ -364,6 +364,14 @@ function checkGraph() {
   completedDataIndices.add(selectedIndex);  // 이 자료 인덱스를 완료 목록에 추가
   renderDataList();                         // ✅ 표기 다시 렌더링
 
+  studentGraphs[selectedDataName] = plottedPoints.map(p => ({
+    x: selectedData[p.i].x,
+    y: parseFloat(p.y.toFixed(2))
+  }));
+  localStorage.setItem("studentGraphs", JSON.stringify(studentGraphs));
+
+   localStorage.setItem("selectedDataIndex", selectedIndex); 
+
   const progressText = `(${completedDataIndices.size}/${MIN_REQUIRED_SETS})`;
 
   if (completedDataIndices.size >= MIN_REQUIRED_SETS) {
@@ -401,17 +409,29 @@ function checkGraph() {
 
 // 다음 단계 버튼 클릭 시
 function handleNextStep() {
-  const selectedIndex = document.getElementById("dataSelect").value;
-  if (selectedIndex === '') {
+  const studentGraphs = JSON.parse(localStorage.getItem("studentGraphs") || "{}");
+  const completedCount = Object.keys(studentGraphs).length;
+
+  if (completedCount < MIN_REQUIRED_SETS) {
     Swal.fire({
       icon: "warning",
-      title: "자료 선택 필요!",
-      text: "자료를 먼저 선택하세요.",
+      title: "자료 부족!",
+      text: `최소 ${MIN_REQUIRED_SETS}개의 그래프를 완성해야 다음 단계로 이동할 수 있어요.`,
       confirmButtonText: "확인"
     });
     return;
   }
 
+  const selectedIndex = parseInt(localStorage.getItem("selectedDataIndex"));  // ✅ 선택 인덱스를 localStorage에서 불러옴
+  if (isNaN(selectedIndex)) {
+  Swal.fire({
+    icon: "warning",
+    title: "자료 선택 필요!",
+    text: "자료를 먼저 선택하세요.",
+    confirmButtonText: "확인"
+  });
+  return;
+}
 
   const nextStepBtn = document.getElementById("nextStepBtn");
   if (nextStepBtn.disabled) {
@@ -424,17 +444,19 @@ function handleNextStep() {
     return;
   }
 
-  // 다음 단계로 넘어가기 전 데이터 저장
-  localStorage.setItem('selectedDataIndex', selectedIndex);
+  // 저장
+  localStorage.setItem("selectedDataIndex", selectedIndex);
+  localStorage.setItem("studentGraphs", JSON.stringify(studentGraphs));
 
   Swal.fire({
     icon: "success",
     title: "저장 완료!",
-    text: "다음 단계로 이동합니다.",
+    text: "다음 단계로 이동합니다",
     confirmButtonText: "확인",
   }).then(() => {
     window.location.href = "page2.html";
   });
 }
+
 
 window.handleNextStep = handleNextStep;

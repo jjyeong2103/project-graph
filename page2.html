@@ -12,8 +12,12 @@
     <h1 class="text-2xl font-bold mb-4">2단계: 그래프 해석하기</h1>
     <div class="border-l-4 border-green-500 bg-green-50 text-green-700 p-4 mb-4 rounded">
       두 변수 사이의 관계가 나타난 그래프에서 얻을 수 있는 정보들을 작성해 보세요<br>
-      (전체적인 개형이나 개별 점의 좌표 등에 주목하여 해석해 보세요)
+      (전체적인 그래프 모양이나 개별 점의 좌표 등에 주목하여 해석해 보세요)
     </div>
+
+    <select id="graphSelect" class="border p-2 rounded mb-4">
+    <option value="">-- 해석할 그래프를 선택하세요 --</option>
+    </select>
 
     <!-- 그래프 영역 -->
     <div id="graphContainer" class="relative border bg-gray-50 h-96 mb-4">
@@ -31,17 +35,12 @@
 
     <!-- 버튼 -->
     <div class="flex justify-center gap-4 mb-4">
-    <button id="feedbackBtn" class="bg-blue-500 text-white px-4 py-2 rounded">피드백 받기</button>
-
+      <button id="feedbackBtn" class="bg-blue-500 text-white px-4 py-2 rounded">피드백 받기</button>
+      <button id="extraBtn" disabled class="bg-gray-400 text-white px-4 py-2 rounded">추가 학습</button>
+      <button id="nextStepBtn" onclick="location.href='page3.html'" disabled class="bg-gray-400 text-white px-4 py-2 rounded">다음 단계</button>
+    </div>
 
     <!-- 피드백 출력 -->
     <div id="feedback" class="mt-4 p-4 bg-gray-100 border rounded hidden"></div>
-
-    <button id="nextStepBtn" onclick="location.href='page3.html'" disabled class="bg-gray-400 text-white px-4 py-2 rounded">다음 단계로 가기</button>
-
-
-  </div>
   </body>
-</html>
-
- 
+</html> 
