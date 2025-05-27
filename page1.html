@@ -35,12 +35,13 @@
         <div id="graphContainer" class="relative border bg-gray-50 h-96">
           <canvas id="graphCanvas" width="800" height="400" class="border w-full h-full"></canvas>
         </div>
-        <div class="mt-4 flex justify-between">
-          <button id="checkGraphBtn" class="px-4 py-2 text-base font-medium rounded bg-yellow-500 text-white">피드백 받기</button>
-          <button id="clearPointsBtn" class="px-4 py-2 text-base font-medium rounded bg-red-500 text-white hover:bg-red-600">모든 점 지우기</button>
-          <!-- 여기를 수정 -->
+        <div class="mt-4 flex flex-wrap gap-2 justify-between items-center">
+          <div class="flex gap-2">
+            <button id="checkGraphBtn" class="px-4 py-2 text-base font-medium rounded bg-yellow-500 text-white">피드백 받기</button>
+            <button id="clearPointsBtn" class="px-4 py-2 text-base font-medium rounded bg-red-500 text-white hover:bg-red-600">모든 점 지우기</button>
+            <button id="addPracticeBtn" class="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600">추가 연습</button>
+          </div>
           <button id="nextStepBtn" class="bg-gray-400 text-white px-4 py-2 rounded" disabled>다음 단계</button>
-
         </div>
         <div id="graphFeedback" class="mt-2 text-sm text-red-600"></div>
       </div>

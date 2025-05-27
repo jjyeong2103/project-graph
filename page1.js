@@ -11,6 +11,9 @@ let xAxisLabel = "x";            // x축 이름
 let yAxisLabel = "y";            // y축 이름
 let feedbackClickCount = 0;      // 피드백 클릭 횟수
 let xMin = 0;                    // x축 최소값 (0 여부 확인용)
+let completedDataIndices = new Set();  // 완료한 데이터셋 index 기록
+const MIN_REQUIRED_SETS = 3;           // 최소 완료해야 할 개수
+
 
 // 초기 설정
 document.addEventListener("DOMContentLoaded", () => {
@@ -35,6 +38,28 @@ document.addEventListener("DOMContentLoaded", () => {
 
   // 캔버스 클릭으로 점 찍기
   canvas.addEventListener("click", handleCanvasClick);
+
+    document.getElementById("addPracticeBtn").addEventListener("click", () => {
+    const incompleteIndices = predefinedData
+      .map((_, i) => i)
+      .filter(i => !completedDataIndices.has(i));
+
+    if (incompleteIndices.length === 0) {
+      Swal.fire({
+        icon: 'info',
+        title: '모든 자료를 연습했어요!',
+        text: '더 이상 남은 자료가 없어요.',
+        confirmButtonText: '확인'
+      });
+      return;
+    }
+
+    const randomIndex = incompleteIndices[Math.floor(Math.random() * incompleteIndices.length)];
+    document.getElementById("dataSelect").value = randomIndex;
+    loadSelectedData();
+  });
+
+
 });
 
 // 미리 정의된 데이터셋
@@ -53,7 +78,8 @@ function renderDataList() {
   predefinedData.forEach((dataset, index) => {
     const option = document.createElement("option");
     option.value = index;
-    option.textContent = dataset.name;
+    const isCompleted = completedDataIndices.has(index);
+    option.textContent = isCompleted ? `✅ ${dataset.name}` : dataset.name;
     select.appendChild(option);
   });
 }
@@ -67,6 +93,16 @@ function loadSelectedData() {
   selectedData = selectedSet.data;
   xLabels = selectedData.map((d) => d.x);
   yMax = Math.ceil(Math.max(...selectedData.map((d) => d.y)) * 1.2);
+
+  // 중복 선택 방지
+  if (completedDataIndices.has(selectedIndex)) {
+  Swal.fire({
+    icon: 'info',
+    title: '이미 완료한 자료입니다',
+    text: '이미 그래프를 완성한 자료예요. 다른 자료를 선택해 보세요!',
+    confirmButtonText: '확인'
+  });
+}
 
   // x 최솟값 설정
   const xValues = selectedData.map(d => parseInt(d.x));
@@ -325,9 +361,15 @@ function checkGraph() {
   // 버튼 상태 업데이트
   const nextStepBtn = document.getElementById("nextStepBtn");
   if (allCorrect) {
-    nextStepBtn.disabled = false;
-    nextStepBtn.classList.remove('bg-gray-400');
-    nextStepBtn.classList.add('bg-green-500');
+  completedDataIndices.add(selectedIndex);  // 이 자료 인덱스를 완료 목록에 추가
+  renderDataList();                         // ✅ 표기 다시 렌더링
+
+  const progressText = `(${completedDataIndices.size}/${MIN_REQUIRED_SETS})`;
+
+  if (completedDataIndices.size >= MIN_REQUIRED_SETS) {
+    nextStepBtn.disabled = false;                  // 이제 버튼 활성화
+    nextStepBtn.classList.remove('bg-gray-400');   // 비활성화 색 제거
+    nextStepBtn.classList.add('bg-green-500');     // 초록색으로 활성화 표시
   } else {
     nextStepBtn.disabled = true;
     nextStepBtn.classList.remove('bg-green-500');
@@ -335,11 +377,26 @@ function checkGraph() {
   }
 
   Swal.fire({
-    icon: allCorrect ? 'success' : (feedbackClickCount === 1 ? 'info' : 'warning'),
-    title: allCorrect ? '모든 점이 맞았어요!' : (feedbackClickCount === 1 ? `총 ${selectedData.length - incorrectX.length}개가 정확해요.` : `틀린 x좌표: ${incorrectX.join(', ')}`),
-    text: allCorrect ? '이제 다음 단계로 이동하세요!' : '틀린 점을 다시 확인해보세요.',
+    icon: 'success',
+    title: completedDataIndices.size >= MIN_REQUIRED_SETS
+      ? `모든 점이 맞았어요! ${progressText}`
+      : `정확해요! ${progressText}`,
+    text: completedDataIndices.size >= MIN_REQUIRED_SETS
+      ? '이제 다음 단계로 이동할 수 있어요.'
+      : '다른 자료도 시도해보세요!',
     confirmButtonText: '확인'
   });
+
+  } else {
+  Swal.fire({
+    icon: feedbackClickCount === 1 ? 'info' : 'warning',
+    title: feedbackClickCount === 1
+      ? `총 ${selectedData.length - incorrectX.length}개가 정확해요.`
+      : `틀린 x좌표: ${incorrectX.join(', ')}`,
+    text: '틀린 점을 다시 확인해보세요.',
+    confirmButtonText: '확인'
+  });
+}
 }
 
 // 다음 단계 버튼 클릭 시
@@ -349,11 +406,12 @@ function handleNextStep() {
     Swal.fire({
       icon: "warning",
       title: "자료 선택 필요!",
-      text: "자료료를 먼저 선택하세요.",
+      text: "자료를 먼저 선택하세요.",
       confirmButtonText: "확인"
     });
     return;
   }
+
 
   const nextStepBtn = document.getElementById("nextStepBtn");
   if (nextStepBtn.disabled) {
