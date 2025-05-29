@@ -19,7 +19,9 @@ let studentGraphs = {};  // 자료 인덱스별로 점 배열 저장
 document.addEventListener("DOMContentLoaded", () => {
   canvas = document.getElementById("graphCanvas");
   ctx = canvas.getContext("2d");
+  
 
+  
   // 데이터 선택 드롭다운 렌더링
   renderDataList();
 
@@ -39,26 +41,51 @@ document.addEventListener("DOMContentLoaded", () => {
   // 캔버스 클릭으로 점 찍기
   canvas.addEventListener("click", handleCanvasClick);
 
-    document.getElementById("addPracticeBtn").addEventListener("click", () => {
-    const incompleteIndices = predefinedData
-      .map((_, i) => i)
-      .filter(i => !completedDataIndices.has(i));
+  const addPracticeBtn = document.getElementById("addPracticeBtn");
+addPracticeBtn.disabled = true;
+addPracticeBtn.classList.remove('bg-blue-500', 'hover:bg-blue-600');
+addPracticeBtn.classList.add('bg-gray-400', 'cursor-not-allowed');
 
-    if (incompleteIndices.length === 0) {
-      Swal.fire({
-        icon: 'info',
-        title: '모든 자료를 연습했어요!',
-        text: '더 이상 남은 자료가 없어요.',
-        confirmButtonText: '확인'
-      });
-      return;
+addPracticeBtn.addEventListener("click", () => {
+  const select = document.getElementById("dataSelect");
+  const selectedValue = select.value;
+  const currentIndex = isNaN(parseInt(selectedValue)) ? null : parseInt(selectedValue);
+
+  const incompleteIndices = predefinedData
+    .map((_, i) => i)
+    .filter(i => !completedDataIndices.has(i) && i !== currentIndex);
+
+  if (incompleteIndices.length === 0) {
+    Swal.fire({
+      icon: 'info',
+      title: '모든 자료를 연습했어요!',
+      text: '더 이상 남은 자료가 없어요.',
+      confirmButtonText: '확인'
+    });
+    return;
+  }
+
+  const randomIndex = incompleteIndices[Math.floor(Math.random() * incompleteIndices.length)];
+
+  let found = false;
+  for (let option of select.options) {
+    if (option.value === String(randomIndex)) {
+      found = true;
+      break;
     }
+  }
 
-    const randomIndex = incompleteIndices[Math.floor(Math.random() * incompleteIndices.length)];
-    document.getElementById("dataSelect").value = randomIndex;
-    loadSelectedData();
-  });
+  if (!found) {
+    const opt = document.createElement("option");
+    opt.value = String(randomIndex);
+    opt.textContent = "🔁 " + predefinedData[randomIndex].name;
+    select.appendChild(opt);
+  }
 
+  renderDataList();                        // 리스트 재정렬
+  select.value = String(randomIndex);     // 선택 강제 지정
+  loadSelectedDataByIndex(randomIndex);   // 데이터 로딩
+});
 
 });
 
@@ -71,18 +98,40 @@ const predefinedData = [
   { name: "달리기를 시작한 시간(분)에 따른 맥박 수(회)", data: [{ x: "0", y: 60 }, { x: "1", y: 100 }, { x: "2", y: 130 }, { x: "3", y: 140 }, { x: "4", y: 150 }] }
 ];
 
-// 데이터 드롭다운 렌더링 함수
-function renderDataList() {
+  function renderDataList() {
   const select = document.getElementById("dataSelect");
+
+  // 현재 선택된 값 유지
+  const currentValue = select.value;
+
+  // 기존 옵션의 value만 저장
+  const existingOptionValues = new Set();
+  for (let option of select.options) {
+    if (option.value !== "") {
+      existingOptionValues.add(option.value);
+    }
+  }
+
+  // 초기화
   select.innerHTML = `<option value="">-- 자료를 선택하세요 --</option>`;
+
+  // 상위 3개 또는 기존에 있던 자료 유지
   predefinedData.forEach((dataset, index) => {
-    const option = document.createElement("option");
-    option.value = index;
-    const isCompleted = completedDataIndices.has(index);
-    option.textContent = isCompleted ? `✅ ${dataset.name}` : dataset.name;
-    select.appendChild(option);
+    if (index < 3 || existingOptionValues.has(String(index))) {
+      const option = document.createElement("option");
+      option.value = String(index);
+
+      const isCompleted = completedDataIndices.has(index);
+      option.textContent = (index >= 3 ? "🔁 " : "") + (isCompleted ? `✅ ${dataset.name}` : dataset.name);
+
+      select.appendChild(option);
+    }
   });
+
+  // 선택값 복원
+  if (currentValue) select.value = currentValue;
 }
+
 
 // 데이터 선택 시 호출되는 함수
 function loadSelectedData() {
@@ -102,21 +151,16 @@ function loadSelectedData() {
     text: '이미 그래프를 완성한 자료예요. 다른 자료를 선택해 보세요!',
     confirmButtonText: '확인'
   });
+   return;
 }
 
   // x 최솟값 설정
   const xValues = selectedData.map(d => parseInt(d.x));
   xMin = Math.min(...xValues);
 
-  // 축 이름 자동 추출
-  const nameParts = selectedSet.name.split('에 따른');
-  if (nameParts.length === 2) {
-    xAxisLabel = nameParts[0].trim();
-    yAxisLabel = nameParts[1].trim();
-  } else {
-    xAxisLabel = "x";
-    yAxisLabel = "y";
-  }
+  // 축 이름
+  xAxisLabel = "x";
+  yAxisLabel = "y";
 
   // 상태 초기화
   plottedPoints = [];
@@ -126,24 +170,54 @@ function loadSelectedData() {
 
   // 다음 단계 버튼 다시 비활성화
   const nextStepBtn = document.getElementById("nextStepBtn");
+
+if (completedDataIndices.size < MIN_REQUIRED_SETS) {
   nextStepBtn.disabled = true;
   nextStepBtn.classList.add('bg-gray-400');
   nextStepBtn.classList.remove('bg-green-500');
+} else {
+  nextStepBtn.disabled = false;
+  nextStepBtn.classList.remove('bg-gray-400');
+  nextStepBtn.classList.add('bg-green-500');
+}
 }
 
 // 데이터 미리보기 테이블 표시
 function showDataPreview() {
   const preview = document.getElementById("dataPreview");
-  if (!selectedData.length) return (preview.innerHTML = "");
+  if (!selectedData.length) {
+    preview.innerHTML = "";
+    return;
+  }
+
+  // 선택된 데이터셋의 이름에서 설명 추출
+  const selectedIndex = parseInt(document.getElementById("dataSelect").value);
+  let xDescription = "", yDescription = "";
+  const nameParts = predefinedData[selectedIndex].name.split("에 따른");
+  if (nameParts.length === 2) {
+    xDescription = nameParts[0].trim();
+    yDescription = nameParts[1].trim();
+  }
+
+  // 테이블 행 생성
   const rows = selectedData.map((d, i) => `
     <tr class="${i % 2 === 0 ? 'bg-white' : 'bg-gray-50'}">
       <td class="px-4 py-2 border text-center">${d.x}</td>
       <td class="px-4 py-2 border text-center">${d.y}</td>
     </tr>`).join("");
+
+  // 테이블 렌더링
   preview.innerHTML = `
     <table class="table-auto w-full border-collapse border border-gray-300 rounded shadow-sm overflow-hidden">
       <thead class="bg-gray-100 text-gray-700">
-        <tr><th class="px-4 py-2 border font-semibold text-lg">𝑥</th><th class="px-4 py-2 border font-semibold text-lg">𝑦</th></tr>
+        <tr>
+          <th class="px-4 py-2 border font-semibold text-lg">
+            <span class="italic">𝑥</span><br><span class="text-sm text-gray-600">(${xDescription})</span>
+          </th>
+          <th class="px-4 py-2 border font-semibold text-lg">
+            <span class="italic">𝑦</span><br><span class="text-sm text-gray-600">(${yDescription})</span>
+          </th>
+        </tr>
       </thead>
       <tbody>${rows}</tbody>
     </table>`;
@@ -204,19 +278,22 @@ function drawGraph() {
   ctx.restore();
 
   // 축 이름 및 숫자 라벨 그리기
-  ctx.save();
-  ctx.fillStyle = "#333";
-  ctx.font = "14px sans-serif";
-  ctx.textAlign = "center";
-  ctx.textBaseline = "bottom";
-  ctx.fillText(xAxisLabel, margin + usableWidth / 2, height - 15);
+ctx.save();
+ctx.fillStyle = "#333";
+ctx.font = "italic 16px sans-serif";
+ctx.textAlign = "center";
 
-  ctx.save();
-  ctx.translate(25, height / 2);
-  ctx.rotate(-Math.PI / 2);
-  ctx.fillText(yAxisLabel, 0, 0);
-  ctx.restore();
-  ctx.restore();
+// x축 이름: 오른쪽 아래
+ctx.textBaseline = "top";
+ctx.fillText("𝑥", width - margin + 15, height - margin + 10);
+
+// y축 이름: y축 화살표 바로 위
+ctx.textBaseline = "bottom";
+ctx.fillText("𝑦", margin - 15, margin - 10);
+
+ctx.restore();
+ctx.restore();
+
 
   ctx.font = "12px sans-serif";
   ctx.fillStyle = "#333";
@@ -362,7 +439,7 @@ function checkGraph() {
   const nextStepBtn = document.getElementById("nextStepBtn");
   if (allCorrect) {
   completedDataIndices.add(selectedIndex);  // 이 자료 인덱스를 완료 목록에 추가
-  renderDataList();                         // ✅ 표기 다시 렌더링
+  renderDataList();                         // 표기 다시 렌더링
 
   studentGraphs[selectedDataName] = plottedPoints.map(p => ({
     x: selectedData[p.i].x,
@@ -375,14 +452,14 @@ function checkGraph() {
   const progressText = `(${completedDataIndices.size}/${MIN_REQUIRED_SETS})`;
 
   if (completedDataIndices.size >= MIN_REQUIRED_SETS) {
-    nextStepBtn.disabled = false;                  // 이제 버튼 활성화
-    nextStepBtn.classList.remove('bg-gray-400');   // 비활성화 색 제거
-    nextStepBtn.classList.add('bg-green-500');     // 초록색으로 활성화 표시
-  } else {
-    nextStepBtn.disabled = true;
-    nextStepBtn.classList.remove('bg-green-500');
-    nextStepBtn.classList.add('bg-gray-400');
-  }
+  addPracticeBtn.disabled = false;
+  addPracticeBtn.classList.remove("bg-gray-400", "cursor-not-allowed");
+  addPracticeBtn.classList.add("bg-blue-500", "hover:bg-blue-600");
+  
+  nextStepBtn.disabled = false;
+  nextStepBtn.classList.remove('bg-gray-400');
+  nextStepBtn.classList.add('bg-green-500');
+}
 
   Swal.fire({
     icon: 'success',
@@ -406,6 +483,7 @@ function checkGraph() {
   });
 }
 }
+
 
 // 다음 단계 버튼 클릭 시
 function handleNextStep() {
@@ -460,3 +538,73 @@ function handleNextStep() {
 
 
 window.handleNextStep = handleNextStep;
+
+function loadSelectedDataByIndex(index) {
+  const selectedSet = predefinedData[index];
+  if (!selectedSet) return;
+
+  selectedData = selectedSet.data;
+  xLabels = selectedData.map((d) => d.x);
+  yMax = Math.ceil(Math.max(...selectedData.map((d) => d.y)) * 1.2);
+
+  const xValues = selectedData.map(d => parseInt(d.x));
+  xMin = Math.min(...xValues);
+
+  xAxisLabel = "x";
+  yAxisLabel = "y";
+
+  plottedPoints = [];
+  feedbackClickCount = 0;
+  drawGraph();
+  showDataPreviewFromIndex(index);
+
+  const nextStepBtn = document.getElementById("nextStepBtn");
+
+if (completedDataIndices.size < MIN_REQUIRED_SETS) {
+  nextStepBtn.disabled = true;
+  nextStepBtn.classList.add('bg-gray-400');
+  nextStepBtn.classList.remove('bg-green-500');
+} else {
+  nextStepBtn.disabled = false;
+  nextStepBtn.classList.remove('bg-gray-400');
+  nextStepBtn.classList.add('bg-green-500');
+}
+
+}
+
+function showDataPreviewFromIndex(index) {
+  const preview = document.getElementById("dataPreview");
+  if (!predefinedData[index]) {
+    preview.innerHTML = "";
+    return;
+  }
+
+  const dataset = predefinedData[index];
+  let xDescription = "", yDescription = "";
+  const nameParts = dataset.name.split("에 따른");
+  if (nameParts.length === 2) {
+    xDescription = nameParts[0].trim();
+    yDescription = nameParts[1].trim();
+  }
+
+  const rows = dataset.data.map((d, i) => `
+    <tr class="${i % 2 === 0 ? 'bg-white' : 'bg-gray-50'}">
+      <td class="px-4 py-2 border text-center">${d.x}</td>
+      <td class="px-4 py-2 border text-center">${d.y}</td>
+    </tr>`).join("");
+
+  preview.innerHTML = `
+    <table class="table-auto w-full border-collapse border border-gray-300 rounded shadow-sm overflow-hidden">
+      <thead class="bg-gray-100 text-gray-700">
+        <tr>
+          <th class="px-4 py-2 border font-semibold text-lg">
+            <span class="italic">𝑥</span><br><span class="text-sm text-gray-600">(${xDescription})</span>
+          </th>
+          <th class="px-4 py-2 border font-semibold text-lg">
+            <span class="italic">𝑦</span><br><span class="text-sm text-gray-600">(${yDescription})</span>
+          </th>
+        </tr>
+      </thead>
+      <tbody>${rows}</tbody>
+    </table>`;
+}
