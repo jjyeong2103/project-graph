@@ -11,6 +11,12 @@ let yAxisLabel = 'y';
 let completedInterpretations = new Set();
 let selectedName = "";  // 현재 선택된 데이터 이름
 
+// ✅ 추가 연습용 데이터 이름만 지정
+const extraPracticeNames = [
+  "동영상 업로드 후 경과 일수(일)에 따른 조회 수(회)",
+  "달리기를 시작한 시간(분)에 따른 맥박 수(회)"
+];
+
 const predefinedData = [
   { name: "모자 뜨기 꾸러미(개)에 따른 모자의 개수(개)", data: [{ x: "1", y: 2 }, { x: "2", y: 4 }, { x: "3", y: 6 }, { x: "4", y: 8 }, { x: "5", y: 10 }] },
   { name: "반려 식물의 키를 관찰하기 시작한 주차(주)에 따른 식물의 키(cm)", data: [{ x: "1", y: 2 }, { x: "2", y: 4 }, { x: "3", y: 6 }, { x: "4", y: 8 }, { x: "5", y: 10 }] },
@@ -86,10 +92,7 @@ document.addEventListener('DOMContentLoaded', () => {
   graphSelect.dispatchEvent(new Event('change'));
 
     // === [ 마우스 hover 기능 활성화: 추가 연습용 데이터만 적용 ] ===
-  const extraPracticeNames = [
-    "동영상 업로드 후 경과 일수(일)에 따른 조회 수(회)",
-    "달리기를 시작한 시간(분)에 따른 맥박 수(회)"
-  ];
+
   canvas.addEventListener("mousemove", handleHover);
 
 
@@ -118,6 +121,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
 // === [ 그래프 그리기 함수 ] ===
 function drawGraph() {
+  const isRunningData = selectedName === "달리기를 시작한 시간(분)에 따른 맥박 수(회)";
   const dpr = window.devicePixelRatio || 1;
   const rect = canvas.getBoundingClientRect();
   const width = rect.width;
@@ -133,6 +137,18 @@ function drawGraph() {
   const usableHeight = height - margin * 2;
   const stepX = usableWidth / (xLabels.length + 1);
 
+    // ✅ x=0 위치 계산
+  let xZeroOffset = 0;
+  const zeroIndex = selectedData.findIndex(d => Number(d.x) === 0);
+if (selectedName === "달리기를 시작한 시간(분)에 따른 맥박 수(회)") {
+  const zeroIndex = selectedData.findIndex(d => Number(d.x) === 0);
+  if (zeroIndex !== -1) {
+    const expectedX = stepX * (zeroIndex + 1);
+    xZeroOffset = margin - expectedX-5;
+  }
+}
+
+
   let ySteps = Math.floor(yMax / tickStepY);
   if (ySteps < 6) {
     tickStepY = Math.max(1, Math.floor(yMax / 6));
@@ -142,7 +158,7 @@ function drawGraph() {
   const adjustedYMax = ySteps * tickStepY;
 
   ctx.save();
-  ctx.translate(margin, height - margin);
+  ctx.translate(margin + xZeroOffset, height - margin);
   ctx.scale(1, -1);
 
   // 배경 격자
@@ -150,7 +166,7 @@ function drawGraph() {
   ctx.lineWidth = 1;
 
   for (let i = 0; i < xLabels.length; i++) {
-    const x = stepX * (i + 1);
+    const x = stepX * (i + 1) + xZeroOffset;
     ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, usableHeight); ctx.stroke();
   }
   for (let y = 0; y <= adjustedYMax; y += tickStepY) {
@@ -160,17 +176,37 @@ function drawGraph() {
 
   // 축과 화살표
   ctx.strokeStyle = "#000";
-  ctx.lineWidth = 1.5;
-  drawArrow(ctx, -20, 0, usableWidth + 10, 0);
-  drawArrow(ctx, 0, -20, 0, usableHeight + 10);
+ctx.lineWidth = 1.5;
+
+// x축 
+const arrowXStart = (selectedName === "달리기를 시작한 시간(분)에 따른 맥박 수(회)")
+  ? 40   // 🎯 왼쪽 짧게
+  : -20;
+
+const arrowXEnd = (selectedName === "달리기를 시작한 시간(분)에 따른 맥박 수(회)")
+  ? usableWidth * 0.9  // 🎯 오른쪽도 살짝 줄이기
+  : usableWidth + 10;
+
+drawArrow(ctx, arrowXStart, 0, arrowXEnd, 0);
+
+
+// y축 (특정 데이터에만 조정)
+if (selectedName === "달리기를 시작한 시간(분)에 따른 맥박 수(회)") {
+  drawArrow(ctx, -xZeroOffset, -20, -xZeroOffset, usableHeight + 10); // 🎯 오른쪽으로 보정
+} else {
+  drawArrow(ctx, 0, -20, 0, usableHeight + 10); // 기본 위치
+}
+
 
   // 데이터 점 찍기
-  ctx.fillStyle = "blue";
-  selectedData.forEach((p, i) => {
-    const x = stepX * (i + 1);
-    const y = (p.y / adjustedYMax) * usableHeight;
-    ctx.beginPath(); ctx.arc(x, y, 6, 0, 2 * Math.PI); ctx.fill();
-  });
+ctx.fillStyle = "blue";
+selectedData.forEach((p, i) => {
+  let xOffset = 0;
+
+  const x = stepX * (i + 1) + xZeroOffset;
+  const y = (p.y / adjustedYMax) * usableHeight;
+  ctx.beginPath(); ctx.arc(x, y, 6, 0, 2 * Math.PI); ctx.fill();
+});
 
   ctx.restore();
 
@@ -180,9 +216,16 @@ function drawGraph() {
   ctx.textAlign = 'center';
   ctx.textBaseline = 'top';
   xLabels.forEach((label, i) => {
-    const x = margin + stepX * (i + 1);
-    ctx.fillText(label, x, height - margin + 6);
-  });
+  if (isRunningData && label === "0") return; // 0 생략
+
+  const x = margin + xZeroOffset + stepX * (i + 1);
+
+  if (isRunningData) {
+    ctx.fillText(label, x - 58, height - margin + 6); // 달리기 데이터만 오른쪽 이동
+  } else {
+    ctx.fillText(label, x, height - margin + 6); 
+  }
+});
 
   ctx.textAlign = 'right';
   ctx.textBaseline = 'middle';
@@ -195,13 +238,28 @@ function drawGraph() {
 
   // 축 이름
   ctx.textAlign = 'center';
-  ctx.fillText(xAxisLabel, margin + usableWidth / 2, height - margin + 40);
+  const xLabelX = selectedName === "달리기를 시작한 시간(분)에 따른 맥박 수(회)"
+  ? margin + usableWidth / 2 + xZeroOffset   // 🎯 왼쪽 보정
+  : margin + usableWidth / 2;
+
+ctx.fillText(xAxisLabel, xLabelX, height - margin + 40);
+
   ctx.save();
-  ctx.translate(margin - 40, height - margin - usableHeight / 2);
-  ctx.rotate(-Math.PI / 2);
-  ctx.fillText(yAxisLabel, 0, 0);
-  ctx.restore();
+const yLabelOffsetX = selectedName === "달리기를 시작한 시간(분)에 따른 맥박 수(회)" ? margin + xZeroOffset +10 : margin - 40;
+ctx.translate(yLabelOffsetX, height - margin - usableHeight / 2 - 10);
+ctx.rotate(-Math.PI / 2);
+
+ctx.fillText(yAxisLabel, 0, 0);
+ctx.restore();
+
   ctx.fillText('O', margin - 10, height - margin + 10);
+
+  // === [ drawGraph 함수 마지막 부분에 추가 ] ===
+canvas.removeEventListener("mousemove", handleHover);  // 중복 방지
+if (extraPracticeNames.includes(selectedName)) {
+  canvas.addEventListener("mousemove", handleHover);
+}
+
 }
 
 // === [ 보조 함수: 화살표 그리기 ] ===
@@ -235,6 +293,11 @@ function handleHover(event) {
   const mouseX = event.clientX - rect.left;
   const mouseY = event.clientY - rect.top;
 
+  let hoverX = mouseX;
+if (selectedName === "달리기를 시작한 시간(분)에 따른 맥박 수(회)") {
+  hoverX -= -180;  // 🎯 마우스 위치 왼쪽으로 보정
+}
+
   const dpr = window.devicePixelRatio || 1;
   const width = canvas.width / dpr;
   const height = canvas.height / dpr;
@@ -242,37 +305,87 @@ function handleHover(event) {
   const usableWidth = width - margin * 2;
   const usableHeight = height - margin * 2;
   const stepX = usableWidth / (xLabels.length + 1);
-  const adjustedYMax = Math.ceil(Math.max(...selectedData.map(d => d.y)) * 1.2);
-  
+
+  // 먼저 xZeroOffset 계산
+  let xZeroOffset = 0;
+  if (selectedName === "달리기를 시작한 시간(분)에 따른 맥박 수(회)") {
+  const zeroIndex = selectedData.findIndex(d => Number(d.x) === 0);
+  if (zeroIndex !== -1) {
+    const usableWidth = width - margin * 2;
+    const stepX = usableWidth / (xLabels.length - 1);  // ❗ x=0 포함한 개수 기준으로
+    const zeroX = stepX * zeroIndex;
+    xZeroOffset = margin - zeroX;
+  }
+}
+
+  ctx.save();
+if (selectedName === "달리기를 시작한 시간(분)에 따른 맥박 수(회)") {
+  ctx.translate(margin + xZeroOffset, height - margin);
+} else {
+  ctx.translate(margin, height - margin);
+}
+ctx.scale(1, -1);
+
+  // yMax와 tickStepY를 기준으로 adjustedYMax 재계산
+  let ySteps = Math.floor(yMax / tickStepY);
+  if (ySteps < 6) {
+    tickStepY = Math.max(1, Math.floor(yMax / 6));
+    ySteps = Math.floor(yMax / tickStepY);
+  }
+  const adjustedYMax = ySteps * tickStepY;
+
   const ctx2 = canvas.getContext("2d");
   ctx2.setTransform(1, 0, 0, 1, 0, 0);
   ctx2.clearRect(0, 0, width, height);
-  drawGraph();  // 다시 그려서 기존 그래프 복원
+  drawGraph();  // 기존 그래프 다시 그림
 
   for (let i = 0; i < selectedData.length; i++) {
-    const x = margin + stepX * (i + 1);
-    const y = height - margin - (selectedData[i].y / adjustedYMax) * usableHeight;
-    const dx = mouseX - x;
-    const dy = mouseY - y;
+  let dataX = stepX * (i + 1);
+  let graphX = margin + stepX * (i + 1);
+  let xOffset = 0;
 
-    if (Math.sqrt(dx * dx + dy * dy) < 10) {
-      // 점선 및 텍스트 표시
-      ctx2.beginPath();
-      ctx2.setLineDash([4, 4]);
-      ctx2.strokeStyle = 'gray';
-      ctx2.moveTo(x, y);
-      ctx2.lineTo(x, height - margin); // y축과 만나도록 수직선
-      ctx2.stroke();
-      ctx2.setLineDash([]);
-
-      ctx2.fillStyle = 'black';
-      ctx2.font = '12px sans-serif';
-      ctx2.textAlign = 'left';
-      ctx2.textBaseline = 'bottom';
-      ctx2.fillText(`${selectedData[i].y}`, x + 6, y - 6);
-      break;
-    }
+  if (selectedName === "달리기를 시작한 시간(분)에 따른 맥박 수(회)") {
+    dataX = stepX * (i + 1);
+    graphX = margin + xZeroOffset + dataX;
+    xOffset = xZeroOffset;
   }
+
+  const graphY = height - margin - (selectedData[i].y / adjustedYMax) * usableHeight;
+  const dx = hoverX- graphX;
+  const dy = mouseY - graphY;
+
+  if (Math.sqrt(dx * dx + dy * dy) < 10) {
+    ctx2.beginPath();
+    ctx2.setLineDash([4, 4]);
+    ctx2.strokeStyle = 'gray';
+
+    if (selectedName === "달리기를 시작한 시간(분)에 따른 맥박 수(회)") {
+        ctx2.moveTo(margin, graphY);  // ✅ graphY는 이미 위에서 계산된 값
+        ctx2.lineTo(mouseX, graphY);  
+    } else {
+      ctx2.moveTo(margin, graphY);
+      ctx2.lineTo(graphX, graphY);
+    }
+
+    ctx2.stroke();
+    ctx2.setLineDash([]);
+
+    ctx2.fillStyle = 'black';
+    ctx2.font = '12px sans-serif';
+    ctx2.textAlign = 'right';
+    ctx2.textBaseline = 'middle';
+
+    let yLabelX;
+if (selectedName === "달리기를 시작한 시간(분)에 따른 맥박 수(회)") {
+  yLabelX = margin + xZeroOffset - 75; // 🎯 기존보다 더 왼쪽으로
+} else {
+  yLabelX = margin - 10;
+}
+ctx2.fillText(`${selectedData[i].y}`, yLabelX, graphY);
+    break;
+  }
+}
+
 }
 
 
@@ -322,7 +435,7 @@ async function requestFeedback() {
   예: "반려 식물의 키를 관찰하기 시작한지 1, 2, 3주일 때, 식물의 키는 2, 4, 6cm가 된다"처럼 각각의 값을 연결해서 해석한 경우도 '양적 해석'으로 인정해.
   4. 구간에 대한 관찰, 전체적인 규칙성에 대한 피드백도 추가해 줘.
   5. 마지막으로 학생 상황에 맞는 개선 방향을 제안해 줘.
-  6. 학생이 단위도 틀리지 않고, 각각의 점과 전체적인 해석을 모두 잘 했다면, 마지막 줄에 **반드시 "다른 그래프를 해석해 보세요!"**라고 말해줘. "다른 그래프도"라고 쓰지마.
+  6. 학생이 단위도 틀리지 않고, 각각의 점과 전체적인 해석을 모두 잘 했다면, 마지막 줄에 **반드시 "다른 그래프를 해석해 보세요!"**라고 말해줘. **절대 "다른 그래프도"라고 쓰지마.**
   </피드백 단계>
 
   <피드백 제시 방법>
@@ -340,6 +453,7 @@ async function requestFeedback() {
     처럼 마지막에 단위를 붙이는 건 그대로 인정해. 숫자 리스트 다음에 단위를 한 번만 붙인 경우도 단위가 있는 것으로 인정해야 해.
   - 단위를 축약해서 한 문장 안에서 정리한 경우에도 누락으로 간주하지 마. 단위가 **한 문장 안에서 수치에 명확히 연결되어 있다면**, 반복하지 않아도 단위 누락으로 판단하지 마.
   - "추가 1개일 때 용수철의 길이는 4cm이다", "추가 2개일 때 8cm이다"처럼 문장 중간 또는 끝에 단위가 포함된 경우도 단위를 정확히 사용한 것으로 간주해야 해.
+  - "1분에서 2분 사이"와 같은 표현은 "1,2분 사이"로 표현해도 같은 것으로 간주해야 해.
 
   - 그래프 해석은 반드시 **x축(독립변수, 가로축) → y축(종속변수, 세로축)** 방향으로만 해석해야 해. x축의 값이 변할 때 y축이 어떻게 변하는지 중심으로 써야 해.
   - 학생이의 해석에서 실제 데이터에서 x값에 따른 y값의 차이를 비교해보고 그 값이 정확한지 판단해.
