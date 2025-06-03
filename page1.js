@@ -237,7 +237,7 @@ function drawGraph() {
   const usableHeight = height - margin * 2;
 
   const stepX = usableWidth / (xLabels.length - (xMin === 0 ? 1 : 0));
-  tickStepY = getNiceTickInterval(yMax);
+ tickStepY = getNiceTickInterval(yMax);
 
   let ySteps = Math.floor(yMax / tickStepY);
   if (ySteps < 6) {
@@ -319,9 +319,8 @@ ctx.restore();
 function handleCanvasClick(e) {
   if (!selectedData.length) return;
 
-  const rect = canvas.getBoundingClientRect();  
+  const rect = canvas.getBoundingClientRect();
   const margin = 65;
-
   const usableWidth = rect.width - margin * 2;
   const usableHeight = rect.height - margin * 2;
   const stepX = usableWidth / (xLabels.length - (xMin === 0 ? 1 : 0));
@@ -329,21 +328,39 @@ function handleCanvasClick(e) {
   const mouseX = e.clientX - rect.left;
   const mouseY = e.clientY - rect.top;
 
-  const i = Math.round((mouseX - margin) / stepX) - (xMin === 0 ? 0 : 1);
-  if (i < 0 || i >= xLabels.length) return;
+  const graphX = mouseX - margin;
+  const graphY = rect.height - margin - mouseY; // 좌표 반전
 
-  
-  const graphOriginY = rect.height - margin;
-  let yInGraph = graphOriginY - mouseY;
-  yInGraph = Math.max(0, Math.min(yInGraph, usableHeight));
+  // === x: 항상 가장 가까운 x 인덱스로 스냅 ===
+  let nearestIndex = -1;
+  let minDist = Infinity;
+  for (let i = 0; i < xLabels.length; i++) {
+    const x = stepX * (i + (xMin === 0 ? 0 : 1));
+    const dist = Math.abs(graphX - x);
+    if (dist < minDist) {
+      minDist = dist;
+      nearestIndex = i;
+    }
+  }
 
+  // === y: 자유 입력, 단 정답값 근처면 스냅 ===
+  const yRatio = Math.max(0, Math.min(graphY, usableHeight)) / usableHeight;
+  let freeY = yRatio * yMax;
 
-  let yRatio = yInGraph / usableHeight;
-  let dataY = yRatio * yMax;
+  const correctY = selectedData[nearestIndex].y;
+  const snapThreshold = 1; // 🎯 y값 스냅 허용 오차 (단위: y 단위 값)
 
-  const point = plottedPoints.find((p) => p.i === i);
-  if (point) point.y = dataY;
-  else plottedPoints.push({ i, y: dataY });
+  if (Math.abs(freeY - correctY) <= snapThreshold) {
+    freeY = correctY; // 🎯 정답 y값으로 스냅
+  }
+
+  // === 기존 점 있으면 갱신, 없으면 추가 ===
+  const existing = plottedPoints.findIndex(p => p.i === nearestIndex);
+  if (existing !== -1) {
+    plottedPoints[existing].y = freeY;
+  } else {
+    plottedPoints.push({ i: nearestIndex, y: freeY });
+  }
 
   drawGraph();
 }
@@ -405,7 +422,7 @@ function checkGraph() {
   const selectedIndex = parseInt(document.getElementById("dataSelect").value);
   const selectedDataName = predefinedData[selectedIndex]?.name || '';
 
-  const errorThreshold = 2;
+  const errorThreshold = 0.5;
   let incorrectX = [];
   for (let i = 0; i < selectedData.length; i++) {
     const correctY = selectedData[i].y;

@@ -296,6 +296,20 @@ async function requestFeedback() {
     const feedback = result.choices?.[0]?.message?.content || '피드백을 가져오는 데 실패했습니다.';
     feedbackDiv.innerHTML = feedback;
 
+
+        // 구글폼 기록
+    const formUrl = 'https://docs.google.com/forms/d/e/1FAIpQLSeN2JCNj5pzz0r3TwRagOtK6oSCIZQoEYsCJF_crbmykdJkyg/formResponse';
+    const formData = new FormData();
+    formData.append('entry.1271583286', studentId);
+    formData.append('entry.430525333', studentName);
+    formData.append('entry.1017432853', startTime);
+    formData.append('entry.1918871612', selectedDataName);
+    formData.append('entry.760324373', studentText);
+    formData.append('entry.650944383', feedback);
+
+    fetch(formUrl, { method: 'POST', mode: 'no-cors', body: formData });
+
+
      if (feedback.includes("다른 그래프를 해석해 보세요")) {
       completedInterpretations.add(selectedName);
       localStorage.setItem("completedInterpretations", JSON.stringify([...completedInterpretations]));
@@ -325,15 +339,3 @@ async function requestFeedback() {
     feedbackDiv.textContent = '피드백 요청 중 오류가 발생했습니다.';
   }
 }
-
-    // 구글폼 기록
-    const formUrl = 'https://docs.google.com/forms/d/e/1FAIpQLSeN2JCNj5pzz0r3TwRagOtK6oSCIZQoEYsCJF_crbmykdJkyg/formResponse';
-    const formData = new FormData();
-    formData.append('entry.1271583286', studentId);
-    formData.append('entry.430525333', studentName);
-    formData.append('entry.1017432853', startTime);
-    formData.append('entry.1918871612', selectedDataName);
-    formData.append('entry.760324373', studentText);
-    formData.append('entry.650944383', feedback);
-
-    fetch(formUrl, { method: 'POST', mode: 'no-cors', body: formData });
