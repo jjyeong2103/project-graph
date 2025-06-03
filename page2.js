@@ -9,6 +9,7 @@ let tickStepY = 0;
 let xAxisLabel = 'x';
 let yAxisLabel = 'y';
 let completedInterpretations = new Set();
+let selectedName = "";  // 현재 선택된 데이터 이름
 
 const predefinedData = [
   { name: "모자 뜨기 꾸러미(개)에 따른 모자의 개수(개)", data: [{ x: "1", y: 2 }, { x: "2", y: 4 }, { x: "3", y: 6 }, { x: "4", y: 8 }, { x: "5", y: 10 }] },
@@ -23,6 +24,7 @@ document.addEventListener('DOMContentLoaded', () => {
   canvas = document.getElementById('graphCanvas');
  ctx = canvas.getContext('2d');
 
+
   const graphSelect = document.getElementById('graphSelect');
   const allStudentGraphs = JSON.parse(localStorage.getItem("studentGraphs") || "{}");
 
@@ -36,7 +38,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // 그래프 선택 시 실행
   graphSelect.addEventListener('change', () => {
-    const selectedName = graphSelect.value;
+    selectedName = graphSelect.value; 
+
+   
     const selectedSet = predefinedData.find(d => d.name === selectedName);
     if (!selectedSet) return;
 
@@ -55,25 +59,42 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // 추가 학습 버튼 클릭 시
-    document.getElementById('extraBtn').addEventListener('click', () => {
-      const usedNames = new Set([...document.getElementById('graphSelect').options].map(opt => opt.value));
-     const baseNames = predefinedData.slice(0, 3).map(d => d.name);
-     const remaining = predefinedData.filter(d => !usedNames.has(d.name) && !baseNames.includes(d.name));
-     
-      if (remaining.length === 0) {
-        Swal.fire("추가할 그래프가 더 이상 없습니다!");
-        return;
-      }
+   document.getElementById('extraBtn').addEventListener('click', () => {
+  const completed = new Set(JSON.parse(localStorage.getItem("completedInterpretations") || "[]"));
+  const baseNames = predefinedData.slice(0, 3).map(d => d.name);
+  const remaining = predefinedData.filter(d =>
+    !completed.has(d.name) && !baseNames.includes(d.name)
+  );
 
-     const random = remaining[Math.floor(Math.random() * remaining.length)];
-     const graphSelect = document.getElementById('graphSelect');
-     const option = document.createElement('option');
-     option.value = random.name;
-     option.textContent = random.name;
-     graphSelect.appendChild(option);
-     graphSelect.value = random.name;
-     graphSelect.dispatchEvent(new Event('change'));
-  });
+  if (remaining.length === 0) {
+    Swal.fire("추가할 그래프가 더 이상 없습니다!");
+    return;
+  }
+
+  const random = remaining[Math.floor(Math.random() * remaining.length)];
+  const graphSelect = document.getElementById('graphSelect');
+
+  // 이미 드롭다운에 없다면 옵션 추가
+  if (![...graphSelect.options].some(opt => opt.value === random.name)) {
+    const option = document.createElement('option');
+    option.value = random.name;
+    option.textContent = random.name;
+    graphSelect.appendChild(option);
+  }
+
+  graphSelect.value = random.name;
+  graphSelect.dispatchEvent(new Event('change'));
+
+    // === [ 마우스 hover 기능 활성화: 추가 연습용 데이터만 적용 ] ===
+  const extraPracticeNames = [
+    "동영상 업로드 후 경과 일수(일)에 따른 조회 수(회)",
+    "달리기를 시작한 시간(분)에 따른 맥박 수(회)"
+  ];
+  canvas.addEventListener("mousemove", handleHover);
+
+
+});
+
 
 
     // 해석 입력창 비우기
@@ -117,6 +138,7 @@ function drawGraph() {
     tickStepY = Math.max(1, Math.floor(yMax / 6));
     ySteps = Math.floor(yMax / tickStepY);
   }
+
   const adjustedYMax = ySteps * tickStepY;
 
   ctx.save();
@@ -126,6 +148,7 @@ function drawGraph() {
   // 배경 격자
   ctx.strokeStyle = "#eee";
   ctx.lineWidth = 1;
+
   for (let i = 0; i < xLabels.length; i++) {
     const x = stepX * (i + 1);
     ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, usableHeight); ctx.stroke();
@@ -205,7 +228,53 @@ function getNiceTickInterval(range) {
   return 10 * pow10;
 }
 
-// === [ requestFeedback 함수는 따로 있음 (생략 가능) ] ===
+function handleHover(event) {
+  if (!extraPracticeNames.includes(selectedName)) return;
+
+  const rect = canvas.getBoundingClientRect();
+  const mouseX = event.clientX - rect.left;
+  const mouseY = event.clientY - rect.top;
+
+  const dpr = window.devicePixelRatio || 1;
+  const width = canvas.width / dpr;
+  const height = canvas.height / dpr;
+  const margin = 65;
+  const usableWidth = width - margin * 2;
+  const usableHeight = height - margin * 2;
+  const stepX = usableWidth / (xLabels.length + 1);
+  const adjustedYMax = Math.ceil(Math.max(...selectedData.map(d => d.y)) * 1.2);
+  
+  const ctx2 = canvas.getContext("2d");
+  ctx2.setTransform(1, 0, 0, 1, 0, 0);
+  ctx2.clearRect(0, 0, width, height);
+  drawGraph();  // 다시 그려서 기존 그래프 복원
+
+  for (let i = 0; i < selectedData.length; i++) {
+    const x = margin + stepX * (i + 1);
+    const y = height - margin - (selectedData[i].y / adjustedYMax) * usableHeight;
+    const dx = mouseX - x;
+    const dy = mouseY - y;
+
+    if (Math.sqrt(dx * dx + dy * dy) < 10) {
+      // 점선 및 텍스트 표시
+      ctx2.beginPath();
+      ctx2.setLineDash([4, 4]);
+      ctx2.strokeStyle = 'gray';
+      ctx2.moveTo(x, y);
+      ctx2.lineTo(x, height - margin); // y축과 만나도록 수직선
+      ctx2.stroke();
+      ctx2.setLineDash([]);
+
+      ctx2.fillStyle = 'black';
+      ctx2.font = '12px sans-serif';
+      ctx2.textAlign = 'left';
+      ctx2.textBaseline = 'bottom';
+      ctx2.fillText(`${selectedData[i].y}`, x + 6, y - 6);
+      break;
+    }
+  }
+}
+
 
 
 // === [ 피드백 요청 함수 ] ===
@@ -253,7 +322,7 @@ async function requestFeedback() {
   예: "반려 식물의 키를 관찰하기 시작한지 1, 2, 3주일 때, 식물의 키는 2, 4, 6cm가 된다"처럼 각각의 값을 연결해서 해석한 경우도 '양적 해석'으로 인정해.
   4. 구간에 대한 관찰, 전체적인 규칙성에 대한 피드백도 추가해 줘.
   5. 마지막으로 학생 상황에 맞는 개선 방향을 제안해 줘.
-  6. 학생이 단위도 틀리지 않고, 각각의 점과 전체적인 해석을 모두 잘 했다면, 마지막 줄에 단독으로 다른 줄에 **"다른 그래프를 해석해 보세요!"**라고 안내해 줘.
+  6. 학생이 단위도 틀리지 않고, 각각의 점과 전체적인 해석을 모두 잘 했다면, 마지막 줄에 **반드시 "다른 그래프를 해석해 보세요!"**라고 말해줘. "다른 그래프도"라고 쓰지마.
   </피드백 단계>
 
   <피드백 제시 방법>
@@ -329,18 +398,24 @@ async function requestFeedback() {
     fetch(formUrl, { method: 'POST', mode: 'no-cors', body: formData });
 
 
-     if (feedback.includes("다른 그래프를 해석해 보세요")) {
-      completedInterpretations.add(selectedName);
-      localStorage.setItem("completedInterpretations", JSON.stringify([...completedInterpretations]));
+// ✅ HTML 태그 제거 후 순수 텍스트 추출 + 공백 제거
+const tempDiv = document.createElement('div');
+tempDiv.innerHTML = feedback;
+const plainText = tempDiv.textContent || tempDiv.innerText || "";
+const normalized = plainText.replace(/\s+/g, '').replace(/[\u200B-\u200D\uFEFF]/g, '');
 
-      // 드롭다운에 ✅ 추가
-      const graphSelect = document.getElementById('graphSelect');
-      [...graphSelect.options].forEach(option => {
-        if (option.value === selectedName) {
-          option.textContent = ' ✅' + selectedName ;
-        }
-      });
-    }
+if (normalized.includes("다른그래프를해석해보세요!")) {
+  completedInterpretations.add(selectedName);
+  localStorage.setItem("completedInterpretations", JSON.stringify([...completedInterpretations]));
+
+  const graphSelect = document.getElementById('graphSelect');
+  [...graphSelect.options].forEach(option => {
+  if (option.value === selectedName && !option.textContent.startsWith('✅')) {
+    option.textContent = '✅ ' + selectedName;
+  }
+});
+}
+
 
     const nextStepBtn = document.getElementById('nextStepBtn');
     const extraBtn = document.getElementById('extraBtn');
