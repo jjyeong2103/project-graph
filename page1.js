@@ -46,6 +46,13 @@ document.addEventListener("DOMContentLoaded", () => {
 canvas.addEventListener("mousemove", (e) => {
   if (!selectedData.length) return;
 
+  const selectedIndex = parseInt(document.getElementById("dataSelect").value);
+  // === 조건 추가: 추가 학습 데이터만 y값 표시 ===
+  if (selectedIndex < 3) {
+    document.getElementById("tooltip").style.display = "none";
+    return;
+  }
+
   const rect = canvas.getBoundingClientRect();
   const margin = 65;
   const usableHeight = rect.height - margin * 2;
@@ -59,10 +66,11 @@ canvas.addEventListener("mousemove", (e) => {
 
   const tooltip = document.getElementById("tooltip");
   tooltip.innerText = `y ≈ ${yValue}`;
-  tooltip.style.left = `${mouseX + 70}px`;  // margin 보정 포함
+  tooltip.style.left = `${mouseX + 70}px`;
   tooltip.style.top = `${mouseY + 10}px`;
   tooltip.style.display = "block";
 });
+
 
 canvas.addEventListener("mouseleave", () => {
   document.getElementById("tooltip").style.display = "none";
@@ -170,7 +178,17 @@ function loadSelectedData() {
   const selectedSet = predefinedData[selectedIndex];
   selectedData = selectedSet.data;
   xLabels = selectedData.map((d) => d.x);
-  yMax = Math.ceil(Math.max(...selectedData.map((d) => d.y)) * 1.2);
+  
+const rawMax = Math.max(...selectedData.map((d) => d.y));
+const selectedName = predefinedData[selectedIndex]?.name || "";
+
+if (selectedIndex < 3 || selectedName.includes("맥박 수")) {
+  yMax = Math.ceil(rawMax * 1.2);
+} else {
+  yMax = Math.ceil(rawMax * 1.05);
+}
+
+
 
   // 중복 선택 방지
   if (completedDataIndices.has(selectedIndex)) {
@@ -591,7 +609,15 @@ function loadSelectedDataByIndex(index) {
 
   selectedData = selectedSet.data;
   xLabels = selectedData.map((d) => d.x);
-  yMax = Math.ceil(Math.max(...selectedData.map((d) => d.y)) * 1.2);
+
+  const rawMax = Math.max(...selectedData.map((d) => d.y));
+const selectedName = predefinedData[index]?.name || "";
+
+if (index < 3 || selectedName.includes("맥박 수")) {
+  yMax = Math.ceil(rawMax * 1.2);
+} else {
+  yMax = Math.ceil(rawMax * 1.05);
+}
 
   const xValues = selectedData.map(d => parseInt(d.x));
   xMin = Math.min(...xValues);
