@@ -41,6 +41,35 @@ document.addEventListener("DOMContentLoaded", () => {
   // 캔버스 클릭으로 점 찍기
   canvas.addEventListener("click", handleCanvasClick);
 
+
+  // 마우스 이동 시 y값 표시
+canvas.addEventListener("mousemove", (e) => {
+  if (!selectedData.length) return;
+
+  const rect = canvas.getBoundingClientRect();
+  const margin = 65;
+  const usableHeight = rect.height - margin * 2;
+
+  const mouseX = e.clientX - rect.left;
+  const mouseY = e.clientY - rect.top;
+
+  const graphY = rect.height - margin - mouseY;
+  const yRatio = Math.max(0, Math.min(graphY, usableHeight)) / usableHeight;
+  const yValue = Math.round((yRatio * yMax) * 10) / 10;
+
+  const tooltip = document.getElementById("tooltip");
+  tooltip.innerText = `y ≈ ${yValue}`;
+  tooltip.style.left = `${mouseX + 70}px`;  // margin 보정 포함
+  tooltip.style.top = `${mouseY + 10}px`;
+  tooltip.style.display = "block";
+});
+
+canvas.addEventListener("mouseleave", () => {
+  document.getElementById("tooltip").style.display = "none";
+});
+
+
+
   const addPracticeBtn = document.getElementById("addPracticeBtn");
 addPracticeBtn.disabled = true;
 addPracticeBtn.classList.remove('bg-blue-500', 'hover:bg-blue-600');
