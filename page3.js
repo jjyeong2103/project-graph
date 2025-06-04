@@ -65,13 +65,7 @@ document.addEventListener('DOMContentLoaded', () => {
   };
 
   const problemSets = [
-  {
-    xAxisLabel: "시간(분)",
-    yAxisLabel: "이동 거리(km)",
-    pattern: "증가",
-    question: "자전거를 타고 달린 시간에 따른 이동 거리의 변화를 나타낸 그래프이다. 이를 해석해 보세요."
-  },
-  {
+   {
     xAxisLabel: "시간(분)",
     yAxisLabel: "속력(km/h)",
     pattern: "속력변화",
@@ -82,6 +76,12 @@ document.addEventListener('DOMContentLoaded', () => {
     yAxisLabel: "높이(m)",
     pattern: "주기",
     question: "회전목마의 시간에 따른 지면에서의 높이 변화를 나타낸 그래프이다. 이를 해석해 보세요."
+  },
+  {
+    xAxisLabel: "시간(분)",
+    yAxisLabel: "이동 거리(km)",
+    pattern: "증가",
+    question: "자전거를 타고 달린 시간에 따른 이동 거리의 변화를 나타낸 그래프이다. 이를 해석해 보세요."
   }
 ];
 
