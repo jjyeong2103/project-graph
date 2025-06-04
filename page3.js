@@ -1,4 +1,5 @@
 document.addEventListener('DOMContentLoaded', () => {
+  let isRequestingFeedback = false; // 중복 호출 방지 flag
   let chart;
   let selectedType = '';
   let selectedXLabel = '';
@@ -353,6 +354,9 @@ if (generateBtn) {
   }
 
  async function requestFeedback() {
+  if (isRequestingFeedback) return;
+  isRequestingFeedback = true;
+
   const interpretationInput = document.getElementById('interpretation');
   const feedbackDiv = document.getElementById('feedback');
 
@@ -361,6 +365,7 @@ if (generateBtn) {
     feedbackDiv.textContent = '해석을 먼저 작성해주세요.';
     feedbackDiv.classList.remove('opacity-0');
     feedbackDiv.classList.add('opacity-100');
+    isRequestingFeedback = false;           // 중복 방지 해제
     return;
   }
 
@@ -397,7 +402,7 @@ if (generateBtn) {
   3. 한꺼번에 주지 말고, 학생이 각각의 점에 대해 설명했다면 그래프 전체 모습에 대해 힌트를 주고, 반대로 전체적인 모습만 말했다면 각각의 점을 다시 살펴보도록 유도해줘.
   4. 구간에 대한 관찰, 전체적인 규칙성에 대한 피드백도 추가해 줘.
   5. 마지막으로 학생 상황에 맞는 개선 방향을 제안해 줘.
-  6. 각각의 점과 전체적인 해석을 모두 잘 했다면, 마지막 줄에 **반드시 "다른 그래프를 해석해 보세요!"**라고 말해줘. **절대 "다른 그래프도"라고 쓰지마.**
+  6. 각각의 점과 전체적인 해석을 모두 잘 했다면, 마지막 줄에 **반드시 "다른 그래프를 해석해 보세요!"**라고 말해줘. **절대 "다른 그래프도 해석해 보세요", "더 많은 그래프를 해석해 보세요"라고 쓰지마.**
   </피드백 단계>
 
   <피드백 제시 방법>
@@ -499,6 +504,8 @@ if (generateBtn) {
   } catch (err) {
     console.error('❌ 피드백 요청 실패:', err);
     feedbackDiv.textContent = '❗ 피드백 요청 중 오류가 발생했습니다.';
+  } finally {
+    isRequestingFeedback = false;           // 중복 방지 해제
   }
 }  
   
