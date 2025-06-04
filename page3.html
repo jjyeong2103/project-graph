@@ -12,12 +12,15 @@
   <header class="bg-white shadow sticky top-0 z-10 text-center py-4">
     <h1 class="text-2xl font-bold mb-2">3단계: 다양한 그래프 해석하기</h1>
     <div class="border-l-4 border-green-500 bg-green-50 text-green-700 p-4 mb-4 rounded">
-      그래프 생성하기 버튼을 눌러 생성된 그래프에 대한 해석을 작성한 후, 피드백을 받아보세요<br>
-      (전체적 개형이나 개별 점의 좌표, 구간 등에 주목하여 해석해 보세요)
+      그래프1 버튼을 눌러 생성된 그래프에 대한 해석을 작성한 후, 피드백을 차례대로 받아보세요<br>
+      (전체적인 그래프 모양이나 개별 점의 좌표, 구간 등에 주목하여 해석해 보세요)
     </div>
-    <button onclick="generateGraph()" class="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600">
-      그래프 생성하기
-    </button>
+   <div class="flex justify-center gap-4 my-4">
+  <button id="generateBtn1" class="bg-blue-500 text-white px-4 py-2 rounded">그래프 1</button>
+  <button id="generateBtn2" class="bg-gray-400 text-white px-4 py-2 rounded" disabled>그래프 2</button>
+  <button id="generateBtn3" class="bg-gray-400 text-white px-4 py-2 rounded" disabled>그래프 3</button>
+   </div>
+
   </header>
 
   <main class="max-w-3xl mx-auto mt-6">
