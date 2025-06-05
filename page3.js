@@ -293,8 +293,8 @@ chart = new Chart(ctx, {
         body: JSON.stringify({
           model: 'gpt-4',
           messages: [
-            { role: 'system', content: '너는 중학교 수학 교사야.' },
-            { role: 'user', content: prompt }
+            { role: 'system', content: '너는 중학교 수학 교사로서 학생의 그래프 해석을 점진적으로 피드백하는 역할이야.' },
+            {  role: 'user', content: `${prompt}\n<학생 답변>\n${studentText}` }
           ],
           temperature: 0.6
         })
@@ -304,15 +304,37 @@ chart = new Chart(ctx, {
       const feedback = data.choices?.[0]?.message?.content || '피드백 생성 실패';
       feedbackDiv.innerHTML = feedback;
 
+      // 구글 폼 입력
+       const studentId = localStorage.getItem('studentId') || '';
+       const studentName = localStorage.getItem('studentName') || '';
+       const startTime = localStorage.getItem('startTime') || '';
+
+       const formUrl = 'https://docs.google.com/forms/d/e/1FAIpQLSeN2JCNj5pzz0r3TwRagOtK6oSCIZQoEYsCJF_crbmykdJkyg/formResponse';
+       const formData = new FormData();
+
+       formData.append('entry.1271583286', studentId);
+       formData.append('entry.430525333', studentName);
+       formData.append('entry.1017432853', startTime);
+       formData.append('entry.1576105498', selectedDataName);
+       formData.append('entry.80725412', studentText);
+       formData.append('entry.634512883', feedback);
+
+       fetch(formUrl, {
+          method: 'POST',
+          mode: 'no-cors',
+          body: formData
+      });
+
+
       const tempDiv = document.createElement('div');
       tempDiv.innerHTML = feedback;
       const plain = tempDiv.textContent.replace(/\s+/g, '').replace(/[\u200B-\u200D\uFEFF]/g, '');
 
       if (plain.includes("다른그래프를해석해보세요!")) {
-  completedInterpretations.add(selectedDataName);
-  localStorage.setItem("completedInterpretations", JSON.stringify([...completedInterpretations]));
+      completedInterpretations.add(selectedDataName);
+      localStorage.setItem("completedInterpretations", JSON.stringify([...completedInterpretations]));
 
-  const completed = completedInterpretations.size;
+      const completed = completedInterpretations.size;
 
   // 그래프 1 해석 완료 시 -> 버튼2 활성화
   if (completed === 1) {
