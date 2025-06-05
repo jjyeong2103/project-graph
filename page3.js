@@ -164,14 +164,16 @@ chart = new Chart(ctx, {
     plugins: {
       legend: { display: false },
       tooltip: {
-        callbacks: {
-          label: function (context) {
-            const x = context.parsed.x;
-            const y = context.parsed.y;
-            return `(${x}, ${y})`;
-          }
-        }
-      }
+  displayColors: false,
+  callbacks: {
+    title: () => '',
+    label: function (context) {
+      const x = context.parsed.x.toFixed(1);
+      const y = context.parsed.y.toFixed(1);
+      return `(${x}, ${y})`;
+    }
+  }
+}
     },
     layout: {
       padding: { right: 30 }
