@@ -1,7 +1,6 @@
 document.addEventListener('DOMContentLoaded', () => {
-  let isRequestingFeedback = false; // 중복 호출 방지 flag
+  let isRequestingFeedback = false;
   let chart;
-  let selectedType = '';
   let selectedXLabel = '';
   let selectedYLabel = '';
   let xAxisLabel = '';
@@ -9,13 +8,11 @@ document.addEventListener('DOMContentLoaded', () => {
   let completedInterpretations = new Set();
   let currentProblemIndex = 0;
 
-  // 좌표축, 원점 표시 플러그인
   const axisArrowsPlugin = {
     id: 'axisArrows',
-    afterDraw(chart, args, options) {
+    afterDraw(chart) {
       const { ctx, chartArea, scales } = chart;
       const arrowSize = 8;
-
       ctx.save();
       ctx.strokeStyle = '#000';
       ctx.fillStyle = '#000';
@@ -29,13 +26,11 @@ document.addEventListener('DOMContentLoaded', () => {
       const yTop = chartArea.top;
       const xZero = scales.x.getPixelForValue(0);
 
-      // x축
       ctx.beginPath();
       ctx.moveTo(xStart - 20, yZero);
       ctx.lineTo(xEnd + 10, yZero);
       ctx.stroke();
 
-      // x축 오른쪽 화살표
       ctx.beginPath();
       ctx.moveTo(xEnd + 10, yZero);
       ctx.lineTo(xEnd + 2, yZero - arrowSize / 2);
@@ -43,13 +38,11 @@ document.addEventListener('DOMContentLoaded', () => {
       ctx.lineTo(xEnd + 2, yZero + arrowSize / 2);
       ctx.stroke();
 
-      // y축
       ctx.beginPath();
       ctx.moveTo(xZero, yStart + 20);
       ctx.lineTo(xZero, yTop - 10);
       ctx.stroke();
 
-      // y축 위쪽 화살표
       ctx.beginPath();
       ctx.moveTo(xZero, yTop - 10);
       ctx.lineTo(xZero - arrowSize / 2, yTop - 2);
@@ -57,54 +50,66 @@ document.addEventListener('DOMContentLoaded', () => {
       ctx.lineTo(xZero + arrowSize / 2, yTop - 2);
       ctx.stroke();
 
-      // 원점에 O 표시
       ctx.font = '14px sans-serif';
       ctx.fillText('O', xZero - 15, yZero + 16);
-
       ctx.restore();
     }
   };
 
   const problemSets = [
-   {
-    xAxisLabel: "시간(분)",
-    yAxisLabel: "속력(km/h)",
-    pattern: "속력변화",
-    question: "자율 주행 자동차의 운행이 시작된 후 시간에 따른 자동차의 속력 변화를 나타낸 그래프이다. 이를 해석해 보세요."
-  },
-  {
-    xAxisLabel: "시간(초)",
-    yAxisLabel: "높이(m)",
-    pattern: "주기",
-    question: "회전목마의 시간에 따른 지면에서의 높이 변화를 나타낸 그래프이다. 이를 해석해 보세요."
-  },
-  {
-    xAxisLabel: "시간(분)",
-    yAxisLabel: "이동 거리(km)",
-    pattern: "증가",
-    question: "자전거를 타고 달린 시간에 따른 이동 거리의 변화를 나타낸 그래프이다. 이를 해석해 보세요."
-  }
+    {
+      xAxisLabel: "시간(분)",
+      yAxisLabel: "이동 거리(m)",
+      pattern: "일차",
+      question: "집에 걸어가는 시간에 따른 이동 거리의 변화를 나타낸 그래프입니다. 이를 해석해 보세요."
+    },
+    {
+      xAxisLabel: "시간(분)",
+      yAxisLabel: "속력(km/h)",
+      pattern: "속력변화",
+      question: "자율 주행 자동차의 시간에 따른 속력 변화를 나타낸 그래프입니다. 이를를 해석해 보세요."
+    },
+    {
+      xAxisLabel: "시간(초)",
+      yAxisLabel: "높이(m)",
+      pattern: "주기",
+      question: "회전목마의 시간에 따른 높이 변화를 나타낸 그래프입니다. 이를 해석해 보세요."
+    },
+    {
+      xAxisLabel: "시간(분)",
+      yAxisLabel: "이동 거리(km)",
+      pattern: "증가",
+      question: "자전거를 탄 시간에 따른 이동 거리의 변화를 나타낸 그래프입니다. 이를 해석해 보세요."
+    }
+  ];
+
+  const btns = [
+  document.getElementById('generateBtn1'),
+  document.getElementById('generateBtn2'),
+  document.getElementById('generateBtn3'),
+  document.getElementById('generateBtn4')
 ];
 
-  const btn1 = document.getElementById('generateBtn1');
-  const btn2 = document.getElementById('generateBtn2');
-  const btn3 = document.getElementById('generateBtn3');
+// 초기 상태: 버튼 1만 활성화
+btns.forEach((btn, idx) => {
+  if (!btn) return;
 
-  if (btn1 && btn2 && btn3) {
-    btn1.addEventListener('click', () => {
-      currentProblemIndex = 0;
-      generateGraph();
-    });
-    btn2.addEventListener('click', () => {
-      currentProblemIndex = 1;
-      generateGraph();
-    });
-    btn3.addEventListener('click', () => {
-      currentProblemIndex = 2;
-      generateGraph();
-    });
+  if (idx === 0) {
+    btn.disabled = false;
+    btn.classList.remove('bg-gray-400');
+    btn.classList.add('bg-blue-500');
+  } else {
+    btn.disabled = true;
+    btn.classList.remove('bg-blue-500');
+    btn.classList.add('bg-gray-400');
   }
 
+  // 버튼 클릭 이벤트 등록
+  btn.addEventListener('click', () => {
+    currentProblemIndex = idx;
+    generateGraph();
+  });
+});
 
   function generateGraph() {
     const problemSet = problemSets[currentProblemIndex];
@@ -112,276 +117,120 @@ document.addEventListener('DOMContentLoaded', () => {
     yAxisLabel = problemSet.yAxisLabel;
     selectedXLabel = xAxisLabel;
     selectedYLabel = yAxisLabel;
-    selectedType = problemSet.pattern === '증가' ? 'increasing'
-               : problemSet.pattern === '감소' ? 'decreasing'
-               : 'periodic';
 
-document.getElementById('questionText').textContent = problemSet.question;
-
+    document.getElementById('questionText').textContent = problemSet.question;
     const ctx = document.getElementById('graphCanvas').getContext('2d');
     if (chart) chart.destroy();
 
-    // ✅ "시간(분)-이동 거리(km)" 그래프일 때 특수 처리
-    if (xAxisLabel === "시간(분)" && yAxisLabel === "이동 거리(km)") {
-      const dataPoints = [
-        { x: 0, y: 0 },
-        { x: 30, y: 10 },
-        { x: 60, y: 20 },
-        { x: 90, y: 20 },
-        { x: 120, y: 30 },
-        { x: 150, y: 30 },
-        { x: 180, y: 40 },
-        { x: 210, y: 40 },
-        { x: 240, y: 50 }
-      ];
+    let dataPoints = [];
+    let datasetOptions = {
+    borderColor: 'blue',
+    backgroundColor: 'blue',
+   fill: false,
+    tension: 0
+};
 
-      chart = new Chart(ctx, {
-        type: 'line',
-        data: {
-          datasets: [{
-            data: dataPoints,
-            borderColor: 'blue',
-            backgroundColor: 'blue',
-            fill: false,
-            pointRadius: 6,
-            tension: 0
-          }]
-        },
-        options: {
-          plugins: {
-            legend: {
-              display: false
-            }
-          },
-          layout: {
-            padding: {
-              right: 30
-            }
-          },
-          scales: {
-            x: {
-              type: 'linear',
-              title: {
-                display: true,
-                text: xAxisLabel
-              },
-              min: 0,
-              grid: {
-                color: '#ddd',
-                lineWidth: 1
-              },
-              ticks: {
-                stepSize: 30,
-                callback: function(value) {
-                  return value === 0 ? '' : value;
-                }
-              }
-            },
-            y: {
-              title: {
-                display: true,
-                text: yAxisLabel
-              },
-              min: 0,
-              grid: {
-                color: '#ddd',
-                lineWidth: 1
-              },
-              ticks: {
-                callback: function(value) {
-                  return value === 0 ? '' : value;
-                }
-              }
-            }
+if (xAxisLabel === "시간(분)" && yAxisLabel === "이동 거리(m)") {
+  for (let x = 0; x <= 10; x += 0.1) dataPoints.push({ x, y: 2 * x });
+  datasetOptions.pointRadius = 0;
+  datasetOptions.hoverRadius = 6;
+  datasetOptions.pointHitRadius = 10;
+  datasetOptions.pointHoverBackgroundColor = 'red';
+} else if (xAxisLabel === "시간(분)" && yAxisLabel === "속력(km/h)") {
+  dataPoints = [ { x: 0, y: 0 }, { x: 5, y: 35 }, { x: 8, y: 35 }, { x: 10, y: 0 } ];
+  datasetOptions.pointRadius = 5;
+} else if (xAxisLabel === "시간(초)" && yAxisLabel === "높이(m)") {
+  for (let x = 0; x <= 10; x += 0.5) {
+    dataPoints.push({ x, y: 1.5 + 0.5 * Math.cos(0.5 * Math.PI * x) });
+  }
+  datasetOptions.pointRadius = 5;
+} else if (xAxisLabel === "시간(분)" && yAxisLabel === "이동 거리(km)") {
+  dataPoints = [
+    { x: 0, y: 0 }, { x: 30, y: 10 }, { x: 60, y: 20 },
+    { x: 90, y: 20 }, { x: 120, y: 30 }, { x: 150, y: 30 }, { x: 180, y: 40 }
+  ];
+  datasetOptions.pointRadius = 5;
+}
+
+chart = new Chart(ctx, {
+  type: 'line',
+  data: {
+    datasets: [{
+      data: dataPoints,
+      ...datasetOptions
+    }]
+  },
+  options: {
+    plugins: {
+      legend: { display: false },
+      tooltip: {
+        callbacks: {
+          label: function (context) {
+            const x = context.parsed.x;
+            const y = context.parsed.y;
+            return `(${x}, ${y})`;
           }
-        },
-        plugins: [axisArrowsPlugin]
-      });
-      }
-      else if (xAxisLabel === "시간(초)" && yAxisLabel === "높이(m)") {
-        const dataPoints = [];
-        for (let x = 0; x <= 10; x += 0.5) {
-          dataPoints.push({ x, y: 1.5 + 0.5 * Math.cos(0.5 * Math.PI * x) });
         }
-    
-        chart = new Chart(ctx, {
-          type: 'line',
-          data: {
-            datasets: [{
-              data: dataPoints,
-              borderColor: 'blue',
-              backgroundColor: 'blue',
-              fill: false,
-              pointRadius: 0,
-              tension: 0.4
-            }]
-          },
-          options: {
-            plugins: {
-              legend: {
-                display: false
-              }
-            },
-            layout: {
-              padding: {
-                right: 30
-              }
-            },
-            scales: {
-              x: {
-                type: 'linear',
-                title: {
-                  display: true,
-                  text: xAxisLabel
-                },
-                min: 0,
-                max: 10,
-                grid: {
-                  color: '#ddd',
-                  lineWidth: 1
-                },
-                ticks: {
-                  stepSize: 1,
-                  callback: function(value) {
-                    return value === 0 ? '' : value;
-                  }
-                }
-              },
-              y: {
-                title: {
-                  display: true,
-                  text: yAxisLabel
-                },
-                min: 0,
-                max: 2.5,
-                grid: {
-                  color: '#ddd',
-                  lineWidth: 1
-                },
-                ticks: {
-                  callback: function(value) {
-                    return value === 0 ? '' : value;
-                  }
-                }
-              }
-            }
-          },
-          plugins: [axisArrowsPlugin]
-        });
       }
-      else if (xAxisLabel === "시간(분)" && yAxisLabel === "속력(km/h)") {
-        const dataPoints = [
-            { x: 0, y: 0 },
-            { x: 5, y: 35 },
-            { x: 8, y: 35 },
-            { x: 10, y: 0 }
-        ];
-    
-        chart = new Chart(ctx, {
-            type: 'line',
-            data: {
-                datasets: [{
-                    data: dataPoints,
-                    borderColor: 'blue',
-                    backgroundColor: 'blue',
-                    fill: false,
-                    pointRadius: 6,
-                    tension: 0
-                }]
-            },
-            options: {
-                plugins: {
-                    legend: {
-                        display: false
-                    }
-                },
-                layout: {
-                    padding: {
-                        right: 30
-                    }
-                },
-                scales: {
-                    x: {
-                        type: 'linear',
-                        title: {
-                            display: true,
-                            text: xAxisLabel
-                        },
-                        min: 0,
-                        max: 10,
-                        grid: {
-                            color: '#ddd',
-                            lineWidth: 1
-                        },
-                        ticks: {
-                            stepSize: 1,
-                            callback: function(value) {
-                                return value === 0 ? '' : value;
-                            }
-                        }
-                    },
-                    y: {
-                        title: {
-                            display: true,
-                            text: yAxisLabel
-                        },
-                        min: 0,
-                        max: 40,
-                        grid: {
-                            color: '#ddd',
-                            lineWidth: 1
-                        },
-                        ticks: {
-                            callback: function(value) {
-                                return value === 0 ? '' : value;
-                            }
-                        }
-                    }
-                }
-            },
-            plugins: [axisArrowsPlugin]
-        });
+    },
+    layout: {
+      padding: { right: 30 }
+    },
+    scales: {
+      x: {
+        type: 'linear',
+        title: { display: true, text: xAxisLabel },
+        min: 0,
+        ticks: {
+          callback: function (value) {
+            return value === 0 ? '' : value;
+          }
+        }
+      },
+      y: {
+        title: { display: true, text: yAxisLabel },
+        min: 0,
+        ticks: {
+          callback: function (value) {
+            return value === 0 ? '' : value;
+          }
+        }
       }
-          currentProblemIndex++;
-  if (currentProblemIndex >= problemSets.length) {
-    currentProblemIndex = 0;  // 반복 가능하게 만들기 (원한다면)
+    }
+  },
+  plugins: [axisArrowsPlugin] // ✅ 이 부분이 options 밖에 있어야 하므로 위에서 닫힌 후 붙여야 함
+});
   }
 
-  const generateBtn = document.getElementById('generateBtn');
-if (generateBtn) {
-  generateBtn.disabled = true;
-}  // 피드백 후에만 다시 클릭 가능
-  }
 
- async function requestFeedback() {
-  if (isRequestingFeedback) return;
-  isRequestingFeedback = true;
+  async function requestFeedback() {
+    if (isRequestingFeedback) return;
+    isRequestingFeedback = true;
 
-  const interpretationInput = document.getElementById('interpretation');
-  const feedbackDiv = document.getElementById('feedback');
+    const interpretationInput = document.getElementById('interpretation');
+    const feedbackDiv = document.getElementById('feedback');
+    const studentText = interpretationInput?.value.trim();
 
-  const studentText = interpretationInput?.value.trim();
-  if (!studentText) {
-    feedbackDiv.textContent = '해석을 먼저 작성해주세요.';
-    feedbackDiv.classList.remove('opacity-0');
-    feedbackDiv.classList.add('opacity-100');
-    isRequestingFeedback = false;           // 중복 방지 해제
-    return;
-  }
+    if (!studentText) {
+      feedbackDiv.textContent = '해석을 먼저 작성해주세요.';
+      feedbackDiv.classList.remove('opacity-0');
+      feedbackDiv.classList.add('opacity-100');
+      isRequestingFeedback = false;
+      return;
+    }
 
-  const studentId = localStorage.getItem('studentId') || '';
-  const studentName = localStorage.getItem('studentName') || '';
-  const startTime = localStorage.getItem('startTime') || '';
-  const selectedDataName = localStorage.getItem('selectedDataName') || '';
+    const studentName = localStorage.getItem('studentName') || '학생';
+    const selectedDataName = `${selectedXLabel}-${selectedYLabel}`;
 
-  if (!xAxisLabel || !yAxisLabel) {
-    feedbackDiv.textContent = '먼저 그래프를 선택하거나 생성한 뒤 해석을 작성해주세요.';
-    feedbackDiv.classList.remove('opacity-0');
-    feedbackDiv.classList.add('opacity-100');
-    return;
-  }
+    if (!xAxisLabel || !yAxisLabel) {
+      feedbackDiv.textContent = '먼저 그래프를 선택하거나 생성한 뒤 해석을 작성해주세요.';
+      feedbackDiv.classList.remove('opacity-0');
+      feedbackDiv.classList.add('opacity-100');
+      isRequestingFeedback = false;
+      return;
+    }
 
-  const prompt = `
+    const prompt = `
     <역할>
   너는 중학교 1학년 수학 교사야. 
   학생 이름은 "${studentName}"야. 학생이 선택한 데이터에 따라 학생이 작성한 그래프 해석을 평가해줘.
@@ -429,107 +278,83 @@ if (generateBtn) {
   - “다른 그래프를 해석해 보세요!”는 반드시 학생이 **양적 해석과 질적 경향을 모두 충족**할 때만 출력해야 해.
   `;
 
-  feedbackDiv.textContent = '피드백을 가져오는 중입니다...';
-  feedbackDiv.classList.remove('hidden');
+    feedbackDiv.textContent = '피드백 생성 중...';
+    feedbackDiv.classList.remove('hidden');
 
-  try {
-   const response = await fetch('https://api.openai.com/v1/chat/completions', {
-  method: 'POST',
-  headers: {
-    'Content-Type': 'application/json',
-    'Authorization': `Bearer ${import.meta.env.VITE_OPENAI_API_KEY}`
-  },
-  body: JSON.stringify({
-    model: 'gpt-4',
-    messages: [
-      { role: 'system', content: '너는 중학교 수학 교사야. 학생의 그래프 해석을 피드백해줘.' },
-      { role: 'user', content: `${prompt}\n<학생의 해석>\n${studentText}` }
-    ],
-    temperature: 0.6
-  })
-});
-
-    if (!response.ok) {
-      const errText = await response.text();
-      throw new Error(`API 오류: ${response.status} - ${errText}`);
-    }
-
-    const result = await response.json();
-    const feedback = result.choices?.[0]?.message?.content || '피드백 생성에 실패했습니다.';
-    feedbackDiv.innerHTML = feedback;
-
-    // 완료된 그래프 처리
-    const tempDiv = document.createElement('div');
-    tempDiv.innerHTML = feedback;
-    const plainText = tempDiv.textContent.replace(/\s+/g, '').replace(/[\u200B-\u200D\uFEFF]/g, '');
-
-    if (plainText.includes("다른그래프를해석해보세요!")) {
-      completedInterpretations.add(selectedDataName);
-      localStorage.setItem("completedInterpretations", JSON.stringify([...completedInterpretations]));
-
-      const graphSelect = document.getElementById('graphSelect');
-      [...graphSelect.options].forEach(opt => {
-        if (opt.value === selectedDataName && !opt.textContent.startsWith('✅')) {
-          opt.textContent = '✅ ' + selectedDataName;
-        }
+    try {
+      const res = await fetch('https://api.openai.com/v1/chat/completions', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${import.meta.env.VITE_OPENAI_API_KEY}`
+        },
+        body: JSON.stringify({
+          model: 'gpt-4',
+          messages: [
+            { role: 'system', content: '너는 중학교 수학 교사야.' },
+            { role: 'user', content: prompt }
+          ],
+          temperature: 0.6
+        })
       });
+
+      const data = await res.json();
+      const feedback = data.choices?.[0]?.message?.content || '피드백 생성 실패';
+      feedbackDiv.innerHTML = feedback;
+
+      const tempDiv = document.createElement('div');
+      tempDiv.innerHTML = feedback;
+      const plain = tempDiv.textContent.replace(/\s+/g, '').replace(/[\u200B-\u200D\uFEFF]/g, '');
+
+      if (plain.includes("다른그래프를해석해보세요!")) {
+  completedInterpretations.add(selectedDataName);
+  localStorage.setItem("completedInterpretations", JSON.stringify([...completedInterpretations]));
+
+  const completed = completedInterpretations.size;
+
+  // 그래프 1 해석 완료 시 -> 버튼2 활성화
+  if (completed === 1) {
+    const btn2 = document.getElementById('generateBtn2');
+    if (btn2) {
+      btn2.disabled = false;
+      btn2.classList.remove('bg-gray-400');
+      btn2.classList.add('bg-blue-500');
     }
-
-    // 버튼 상태 업데이트
-    const nextStepBtn = document.getElementById('nextStepBtn');
-    const extraBtn = document.getElementById('extraBtn');
-    if (completedInterpretations.size >= 3) {
-      nextStepBtn.disabled = false;
-      nextStepBtn.classList.remove('bg-gray-400');
-      nextStepBtn.classList.add('bg-green-500');
-
-      extraBtn.disabled = false;
-      extraBtn.classList.remove('bg-gray-400');
-      extraBtn.classList.add('bg-yellow-500');
-    }
-
-    // 구글폼 전송
-    const formUrl = 'https://docs.google.com/forms/d/e/1FAIpQLSeN2JCNj5pzz0r3TwRagOtK6oSCIZQoEYsCJF_crbmykdJkyg/formResponse';
-    const formData = new FormData();
-    formData.append('entry.1271583286', studentId);
-    formData.append('entry.430525333', studentName);
-    formData.append('entry.1017432853', startTime);
-    formData.append('entry.1576105498', `${selectedXLabel} - ${selectedYLabel}`);
-    formData.append('entry.80725412', studentText);
-    formData.append('entry.634512883', feedback);
-
-    fetch(formUrl, { method: 'POST', mode: 'no-cors', body: formData });
-
-  } catch (err) {
-    console.error('❌ 피드백 요청 실패:', err);
-    feedbackDiv.textContent = '❗ 피드백 요청 중 오류가 발생했습니다.';
-  } finally {
-    isRequestingFeedback = false;           // 중복 방지 해제
-  }
-}  
-  
-
-  // 해석 저장 함수 (유지)
-  function submitInterpretation() {
-    const text = document.getElementById('interpretation').value.trim();
-    if (!text) return;
-
-    const interpretationsDiv = document.getElementById('interpretations');
-    const newEntry = document.createElement('p');
-    newEntry.textContent = `학생: ${text}`;
-    interpretationsDiv.appendChild(newEntry);
-
-    document.getElementById('interpretation').value = '';
   }
 
-  // 전역 등록
+  // 그래프 2 해석 완료 시 -> 버튼3 활성화
+  if (completed === 2) {
+    const btn3 = document.getElementById('generateBtn3');
+    if (btn3) {
+      btn3.disabled = false;
+      btn3.classList.remove('bg-gray-400');
+      btn3.classList.add('bg-blue-500');
+    }
+  }
+
+  // 그래프 3 해석 완료 시 -> 버튼4 활성화
+  if (completed === 3) {
+    const btn4 = document.getElementById('generateBtn4');
+    if (btn4) {
+      btn4.disabled = false;
+      btn4.classList.remove('bg-gray-400');
+      btn4.classList.add('bg-blue-500');
+    }
+  }
+}
+
+    } catch (err) {
+      feedbackDiv.textContent = '❗ 피드백 오류: ' + err.message;
+    } finally {
+      isRequestingFeedback = false;
+    }
+  }
+
   window.generateGraph = generateGraph;
   window.requestFeedback = requestFeedback;
-  window.submitInterpretation = submitInterpretation;
- 
-  // 피드백 버튼
+
   const feedbackBtn = document.getElementById('feedbackBtn');
   if (feedbackBtn) {
-  feedbackBtn.addEventListener('click', requestFeedback);
-}
+    feedbackBtn.addEventListener('click', requestFeedback);
+  }
 });
