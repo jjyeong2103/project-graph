@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>소감 작성하기</title>
+  <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet" />
+</head>
+
+<body class="bg-gray-100 p-6">
+  <div class="max-w-4xl mx-auto bg-white p-6 rounded-lg shadow">
+    <h1 class="text-2xl font-bold mb-4">오늘 활동에 대한 소감 작성하기</h1>
+
+    <!-- 안내 문구 -->
+    <div class="border-l-4 border-yellow-500 bg-yellow-50 text-yellow-700 p-4 mb-4 rounded">
+      <span class="font-bold">오늘 활동을 돌아보며 아래 항목에 대해 작성해 보세요</span>
+    </div>
+
+    <!-- 소감 입력 -->
+    <div class="mb-4">
+      <label class="block font-semibold mb-2">1. 활동을 하면서 좋았던 점</label>
+      <textarea id="goodPoint" rows="4" class="w-full border rounded p-2"></textarea>
+    </div>
+
+    <div class="mb-6">
+      <label class="block font-semibold mb-2">2. 활동을 하면서 낯설거나 어려웠던 점</label>
+      <textarea id="strangePoint" rows="4" class="w-full border rounded p-2"></textarea>
+    </div>
+
+    <div class="mb-6">
+      <label class="block font-semibold mb-2">3. 활동을 하면서 배운 점</label>
+      <textarea id="improvePoint" rows="4" class="w-full border rounded p-2"></textarea>
+    </div>
+
+    <!-- 버튼 그룹 -->
+    <div class="flex justify-center gap-4 mb-6">
+      <button id="submitBtn" class="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600">
+        제출하기
+      </button>
+      <a id="surveyBtn"
+   href="https://docs.google.com/forms/d/e/1FAIpQLSex5b6HcV778I-sdLForLh6qJ9eHEHxpv_daqZerDF9D5z4vA/formResponse"
+   class="bg-gray-400 text-white px-4 py-2 rounded pointer-events-none"
+   target="_blank" rel="noopener noreferrer">
+  설문하기
+</a>
+
+    </div>
+
+    <!-- 제출 확인 메시지 -->
+    <div id="confirmation" class="text-center text-green-600 font-semibold hidden">
+      제출이 완료되었습니다! 이제 설문하기 버튼을 클릭해 주세요.
+    </div>
+  </div>
+
+  <script src="page4.js"></script>
+</body>
+</html>

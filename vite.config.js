@@ -10,7 +10,8 @@ export default defineConfig({
         index: resolve(__dirname, 'index.html'),
         page1: resolve(__dirname, 'page1.html'),
         page2: resolve(__dirname, 'page2.html'),
-        page3: resolve(__dirname, 'page3.html')
+        page3: resolve(__dirname, 'page3.html'),
+        page4: resolve(__dirname, 'page4.html')
       },
     },
   },
