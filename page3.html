@@ -36,35 +36,31 @@
     <!-- 그래프 -->
     <canvas id="graphCanvas" width="800" height="400" class="mx-auto mb-6"></canvas>
 
-    <!-- 해석 입력 -->
-    <textarea id="interpretation"
-      placeholder="1. 그래프에 대한 해석 작성하기
-2. 피드백 받기 버튼을 눌러 피드백 받기
-3. 피드백을 반영한 그래프 해석 다시 작성하기
-(단, 피드백 받은 결과가 긍정적인 경우는 그대로 둔 채로 이어서 작성하면 됩니다)"
-      class="w-full border border-gray-300 rounded p-3 text-base mb-4" rows="5"></textarea>
+     <!-- 해석 입력 -->
+    <textarea id="interpretation" rows="5" class="w-full border rounded p-2 mb-4" 
+    placeholder="그래프 해석하기 과정
+    1. 그래프에 대한 해석 작성하기
+    2. 피드백 받기 버튼을 눌러 피드백 받기
+    3. 피드백을 반영한 그래프 해석 다시 작성하기
+       (단, 피드백 받은 결과가 긍정적인 경우는 그대로 둔 채로 이어서 작성하면 됩니다) "></textarea>
 
-    <!-- 피드백 버튼 -->
-    <div class="flex justify-center gap-4 mb-4">
-      <button id="feedbackBtn" onclick="requestFeedback()" class="bg-blue-500 text-white px-4 py-2 rounded">
-        피드백 받기
-      </button>
-    </div>
 
-    <!-- 설문 버튼 -->
-    <div class="flex justify-center mt-2 mb-6">
-      <a href="https://docs.google.com/forms/d/e/1FAIpQLSex5b6HcV778I-sdLForLh6qJ9eHEHxpv_daqZerDF9D5z4vA/formResponse"
-        target="_blank" rel="noopener noreferrer"
-        class="bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600">
-        학습 완료 후 설문하기
-      </a>
-    </div>
+    <!-- 버튼 그룹: 피드백 + 설문 -->
+<div class="flex justify-center gap-4 mb-6">
+  <button id="feedbackBtn" onclick="requestFeedback()" class="bg-blue-500 text-white px-4 py-2 rounded">
+    피드백 받기
+  </button>
 
-    <!-- 피드백 영역 -->
-    <div id="feedback" class="bg-white p-4 rounded shadow text-sm text-gray-800 whitespace-pre-line mb-6 hidden"></div>
+  <a href="https://docs.google.com/forms/d/e/1FAIpQLSex5b6HcV778I-sdLForLh6qJ9eHEHxpv_daqZerDF9D5z4vA/formResponse"
+    target="_blank" rel="noopener noreferrer"
+    class="bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600">
+    학습 완료 후 설문하기
+  </a>
+</div>
 
-    <div id="interpretations" class="space-y-2 text-sm text-gray-700"></div>
-  </div>
+    <!-- 피드백 출력 -->
+    <div id="feedback" class="mt-4 p-4 bg-gray-100 border rounded hidden"></div>
+
 
   <script type="module" src="/page3.js"></script>
 </body>
