@@ -8,44 +8,63 @@
   <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet" />
 </head>
 
-<body class="bg-gray-100 min-h-screen p-6">
-  <header class="bg-white shadow sticky top-0 z-10 text-center py-4">
-    <h1 class="text-2xl font-bold mb-2">3단계: 다양한 그래프 해석하기</h1>
+<body class="bg-gray-100 p-6">
+  <div class="max-w-4xl mx-auto bg-white p-6 rounded-lg shadow">
+    <h1 class="text-2xl font-bold mb-4">3단계: 다양한 그래프 해석하기</h1>
+
+    <!-- 안내 문구 -->
     <div class="border-l-4 border-green-500 bg-green-50 text-green-700 p-4 mb-4 rounded">
-      그래프1 버튼을 눌러 생성된 그래프에 대한 해석을 작성한 후, 피드백을 차례대로 받아보세요<br>
-      (전체적인 그래프 모양, 개별 점의 좌표, 구간 등에 주목하여 해석해 보세요)
+      <span class="font-bold">
+        그래프1 버튼을 눌러 생성된 그래프에서 알 수 있는 사실을 작성해 보세요<br>
+      </span>
+      <span class="text-gray-600">
+        ※ 그래프 1이 완료되면, 그래프 2, 3, 4를 순서대로 해석해 보세요
+      </span>
     </div>
-   <div class="flex justify-center gap-4 my-4">
-  <button id="generateBtn1" class="bg-blue-500 text-white px-4 py-2 rounded">그래프 1</button>
-  <button id="generateBtn2" class="bg-gray-400 text-white px-4 py-2 rounded" disabled>그래프 2</button>
-  <button id="generateBtn3" class="bg-gray-400 text-white px-4 py-2 rounded" disabled>그래프 3</button>
-  <button id="generateBtn4" class="bg-blue-500 text-white px-4 py-2 rounded">그래프 4</button>
-   </div>
 
-  </header>
+    <!-- 버튼 그룹 -->
+    <div class="flex justify-center gap-4 my-4">
+      <button id="generateBtn1" class="bg-blue-500 text-white px-4 py-2 rounded">그래프 1</button>
+      <button id="generateBtn2" class="bg-gray-400 text-white px-4 py-2 rounded" disabled>그래프 2</button>
+      <button id="generateBtn3" class="bg-gray-400 text-white px-4 py-2 rounded" disabled>그래프 3</button>
+      <button id="generateBtn4" class="bg-blue-500 text-white px-4 py-2 rounded">그래프 4</button>
+    </div>
 
-  <main class="max-w-3xl mx-auto mt-6">
+    <!-- 질문 텍스트 -->
     <div id="questionText" class="text-left text-gray-700 text-base mb-4"></div>
+
+    <!-- 그래프 -->
     <canvas id="graphCanvas" width="800" height="400" class="mx-auto mb-6"></canvas>
 
+    <!-- 해석 입력 -->
     <textarea id="interpretation"
-  placeholder="1. 그래프에 대한 해석 작성하기
+      placeholder="1. 그래프에 대한 해석 작성하기
 2. 피드백 받기 버튼을 눌러 피드백 받기
 3. 피드백을 반영한 그래프 해석 다시 작성하기
 (단, 피드백 받은 결과가 긍정적인 경우는 그대로 둔 채로 이어서 작성하면 됩니다)"
-  class="w-full border border-gray-300 rounded p-3 text-base mb-4" rows="5"></textarea>
+      class="w-full border border-gray-300 rounded p-3 text-base mb-4" rows="5"></textarea>
 
+    <!-- 피드백 버튼 -->
     <div class="flex justify-center gap-4 mb-4">
       <button id="feedbackBtn" onclick="requestFeedback()" class="bg-blue-500 text-white px-4 py-2 rounded">
         피드백 받기
-    </button>
+      </button>
     </div>
 
+    <!-- 설문 버튼 -->
+    <div class="flex justify-center mt-2 mb-6">
+      <a href="https://docs.google.com/forms/d/e/1FAIpQLSex5b6HcV778I-sdLForLh6qJ9eHEHxpv_daqZerDF9D5z4vA/formResponse"
+        target="_blank" rel="noopener noreferrer"
+        class="bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600">
+        학습 완료 후 설문하기
+      </a>
+    </div>
+
+    <!-- 피드백 영역 -->
     <div id="feedback" class="bg-white p-4 rounded shadow text-sm text-gray-800 whitespace-pre-line mb-6 hidden"></div>
 
     <div id="interpretations" class="space-y-2 text-sm text-gray-700"></div>
-  </main>
+  </div>
 
   <script type="module" src="/page3.js"></script>
 </body>
-</html>
